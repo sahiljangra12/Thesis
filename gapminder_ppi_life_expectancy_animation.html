@@ -1,0 +1,414 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+#wrap{padding:1rem 0}
+#header{margin-bottom:1rem}
+#header h2{font-size:17px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+#header p{font-size:12px;color:var(--color-text-secondary)}
+#controls{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.btn{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--color-text-primary);transition:background 0.15s}
+.btn:hover{background:var(--color-background-secondary)}
+.btn.active{background:var(--color-background-info);border-color:transparent;color:var(--color-text-info)}
+#decade-tabs{display:flex;gap:6px}
+#speed-wrap{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary);margin-left:auto}
+#speed-wrap input{width:80px}
+#chart-area{position:relative;width:100%}
+#chart-canvas{display:block;width:100%}
+#tooltip{position:absolute;pointer-events:none;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:12px;line-height:1.6;display:none;min-width:170px;z-index:10}
+#tooltip b{font-weight:500;font-size:13px}
+#legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--color-text-secondary)}
+.leg-item{display:flex;align-items:center;gap:5px}
+.leg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+#stats-bar{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:6px 12px;font-size:12px;color:var(--color-text-secondary);min-width:100px}
+.stat b{display:block;font-size:16px;font-weight:500;color:var(--color-text-primary)}
+</style>
+
+<div id="wrap">
+<h2 class="sr-only">Gapminder-style animation: Planetary Pressure Index vs Life Expectancy across three decades for 175–180 countries, sized by population and coloured by cluster.</h2>
+
+<div id="header">
+  <h2>Planetary Pressure Index vs Life Expectancy — Three Decades</h2>
+  <p>Bubble size ∝ population &nbsp;·&nbsp; Colour = cluster &nbsp;·&nbsp; Hover a bubble to identify a country</p>
+</div>
+
+<div id="controls">
+  <div id="decade-tabs">
+    <button class="btn active" data-decade="1990–2000" onclick="switchDecade('1990–2000')">1990–2000</button>
+    <button class="btn" data-decade="2000–2010" onclick="switchDecade('2000–2010')">2000–2010</button>
+    <button class="btn" data-decade="2010–2023" onclick="switchDecade('2010–2023')">2010–2023</button>
+  </div>
+  <button class="btn" id="playBtn" onclick="togglePlay()">▶ Animate</button>
+  <div id="speed-wrap">
+    <span>Speed</span>
+    <input type="range" min="1" max="5" value="3" step="1" id="speedRange" oninput="updateSpeed(this.value)">
+    <span id="speedLabel">3×</span>
+  </div>
+</div>
+
+<div id="stats-bar">
+  <div class="stat"><b id="s-n">—</b>Countries</div>
+  <div class="stat"><b id="s-medppi">—</b>Median PPI</div>
+  <div class="stat"><b id="s-medlife">—</b>Median life exp.</div>
+  <div class="stat"><b id="s-c4">—</b>Cluster 4 (transitioning)</div>
+</div>
+
+<div id="chart-area">
+  <canvas id="chart-canvas" role="img" aria-label="Scatter plot of PPI vs Life Expectancy for 175-180 countries across three decades. Bubble size encodes population and colour encodes cluster membership."></canvas>
+  <div id="tooltip"></div>
+</div>
+
+<div id="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#C0392B"></div>C1 — High pressure / Low development</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#D4850A"></div>C2 — High pressure / High development</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#1E8449"></div>C3 — Low pressure / Low development</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#1A5F9A"></div>C4 — Transitioning / Decoupler</div>
+  <div class="leg-item" style="margin-left:8px"><div class="leg-dot" style="background:#888;width:7px;height:7px"></div>~10M pop</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#888;width:14px;height:14px"></div>~100M pop</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#888;width:22px;height:22px;margin-left:-4px"></div>~1B pop</div>
+</div>
+</div>
+
+<script>
+const CLUSTER_COLORS = {C1:'#C0392B',C2:'#D4850A',C3:'#1E8449',C4:'#1A5F9A'};
+const CLUSTER_LABELS = {
+  C1:'High Press / Low Dev',
+  C2:'High Press / High Dev',
+  C3:'Low Press / Low Dev',
+  C4:'Transitioning / Decoupler'
+};
+const NOTABLE = ['China','India','United States','Indonesia','Brazil','Nigeria','Pakistan','Bangladesh','Japan','Germany','France','United Kingdom','Saudi Arabia','Qatar','Ethiopia','South Africa','Mexico','Russian Federation','Australia','Bahrain','Kuwait'];
+const DECADES = ['1990–2000','2000–2010','2010–2023'];
+
+const RAW = {"1990\u20132000":[{"country":"Afghanistan","iso3":"AFG","cl":"C3","ppi":56.42,"life_exp":50.85,"gdp":174.9,"pop":16474252,"region":"South Asia","income":"Lower-Middle"},{"country":"Albania","iso3":"ALB","cl":"C4","ppi":28.77,"life_exp":73.8,"gdp":710.6,"pop":3187784,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Algeria","iso3":"DZA","cl":"C1","ppi":36.44,"life_exp":68.45,"gdp":1731.7,"pop":28333777,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Angola","iso3":"AGO","cl":"C3","ppi":16.61,"life_exp":44.61,"gdp":558.5,"pop":13791194,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Argentina","iso3":"ARG","cl":"C1","ppi":38.6,"life_exp":72.83,"gdp":7083.0,"pop":35032641,"region":"Latin America & Caribbean","income":"High"},{"country":"Armenia","iso3":"ARM","cl":"C1","ppi":39.96,"life_exp":69.0,"gdp":500.5,"pop":3362300,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Australia","iso3":"AUS","cl":"C2","ppi":45.06,"life_exp":78.05,"gdp":20189.3,"pop":18033582,"region":"East Asia & Pacific","income":"High"},{"country":"Austria","iso3":"AUT","cl":"C2","ppi":34.21,"life_exp":76.73,"gdp":25767.1,"pop":7906474,"region":"Europe & Central Asia","income":"High"},{"country":"Azerbaijan","iso3":"AZE","cl":"C1","ppi":42.85,"life_exp":62.65,"gdp":492.7,"pop":7650031,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Bahrain","iso3":"BHR","cl":"C2","ppi":70.32,"life_exp":73.47,"gdp":11566.2,"pop":563099,"region":"Middle East & North Africa","income":"High"},{"country":"Bangladesh","iso3":"BGD","cl":"C3","ppi":44.21,"life_exp":58.32,"gdp":329.2,"pop":122798534,"region":"South Asia","income":"Lower-Middle"},{"country":"Belgium","iso3":"BEL","cl":"C2","ppi":49.31,"life_exp":76.9,"gdp":24174.7,"pop":10124770,"region":"Europe & Central Asia","income":"High"},{"country":"Benin","iso3":"BEN","cl":"C3","ppi":24.79,"life_exp":55.12,"gdp":374.9,"pop":6230126,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Bolivia","iso3":"BOL","cl":"C1","ppi":38.48,"life_exp":59.62,"gdp":857.2,"pop":7871920,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Botswana","iso3":"BWA","cl":"C4","ppi":28.52,"life_exp":55.53,"gdp":3088.3,"pop":1494576,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Brazil","iso3":"BRA","cl":"C1","ppi":18.32,"life_exp":67.7,"gdp":3659.5,"pop":161692809,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Bulgaria","iso3":"BGR","cl":"C1","ppi":42.1,"life_exp":71.24,"gdp":1534.5,"pop":8411387,"region":"Europe & Central Asia","income":"High"},{"country":"Burkina Faso","iso3":"BFA","cl":"C3","ppi":30.71,"life_exp":49.74,"gdp":274.5,"pop":10445163,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Burundi","iso3":"BDI","cl":"C3","ppi":37.5,"life_exp":44.83,"gdp":163.1,"pop":5976484,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Cambodia","iso3":"KHM","cl":"C3","ppi":14.97,"life_exp":56.86,"gdp":288.0,"pop":10018837,"region":"East Asia & Pacific","income":"Lower-Middle"},{"country":"Cameroon","iso3":"CMR","cl":"C3","ppi":19.86,"life_exp":53.56,"gdp":896.7,"pop":13081318,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Canada","iso3":"CAN","cl":"C2","ppi":32.49,"life_exp":78.15,"gdp":21454.2,"pop":29258719,"region":"North America","income":"High"},{"country":"Chad","iso3":"TCD","cl":"C3","ppi":33.61,"life_exp":47.18,"gdp":224.6,"pop":7174448,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Chile","iso3":"CHL","cl":"C1","ppi":32.64,"life_exp":75.33,"gdp":4341.3,"pop":14504307,"region":"Latin America & Caribbean","income":"High"},{"country":"China","iso3":"CHN","cl":"C1","ppi":47.21,"life_exp":70.31,"gdp":606.7,"pop":1202818636,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Colombia","iso3":"COL","cl":"C1","ppi":28.99,"life_exp":69.83,"gdp":2224.4,"pop":35781219,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Congo, Dem. Rep.","iso3":"COD","cl":"C3","ppi":8.05,"life_exp":49.83,"gdp":191.9,"pop":43599976,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Costa Rica","iso3":"CRI","cl":"C1","ppi":33.61,"life_exp":76.55,"gdp":3055.1,"pop":3533206,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Cote d'Ivoire","iso3":"CIV","cl":"C3","ppi":36.58,"life_exp":51.89,"gdp":926.3,"pop":14911004,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Cuba","iso3":"CUB","cl":"C1","ppi":36.17,"life_exp":74.59,"gdp":2427.9,"pop":10905786,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Czechia","iso3":"CZE","cl":"C1","ppi":43.92,"life_exp":73.28,"gdp":5127.8,"pop":10309492,"region":"Europe & Central Asia","income":"High"},{"country":"Denmark","iso3":"DNK","cl":"C2","ppi":48.73,"life_exp":75.59,"gdp":31112.3,"pop":5237135,"region":"Europe & Central Asia","income":"High"},{"country":"Dominican Republic","iso3":"DOM","cl":"C1","ppi":32.92,"life_exp":69.24,"gdp":2036.0,"pop":7879146,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Ecuador","iso3":"ECU","cl":"C1","ppi":32.51,"life_exp":70.82,"gdp":1838.1,"pop":11588766,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Egypt, Arab Rep.","iso3":"EGY","cl":"C1","ppi":48.03,"life_exp":65.1,"gdp":955.1,"pop":65706135,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"El Salvador","iso3":"SLV","cl":"C1","ppi":34.94,"life_exp":64.93,"gdp":1464.8,"pop":5727685,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Ethiopia","iso3":"ETH","cl":"C3","ppi":20.79,"life_exp":48.26,"gdp":167.3,"pop":57550926,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Finland","iso3":"FIN","cl":"C2","ppi":23.15,"life_exp":76.31,"gdp":24294.9,"pop":5096756,"region":"Europe & Central Asia","income":"High"},{"country":"France","iso3":"FRA","cl":"C2","ppi":45.15,"life_exp":77.81,"gdp":23800.6,"pop":59542271,"region":"Europe & Central Asia","income":"High"},{"country":"Germany","iso3":"DEU","cl":"C2","ppi":44.88,"life_exp":76.52,"gdp":26626.3,"pop":81332075,"region":"Europe & Central Asia","income":"High"},{"country":"Ghana","iso3":"GHA","cl":"C3","ppi":33.2,"life_exp":56.73,"gdp":370.3,"pop":17442986,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Greece","iso3":"GRC","cl":"C2","ppi":46.31,"life_exp":77.6,"gdp":11669.1,"pop":10546304,"region":"Europe & Central Asia","income":"High"},{"country":"Hungary","iso3":"HUN","cl":"C1","ppi":46.3,"life_exp":69.97,"gdp":4213.4,"pop":10314851,"region":"Europe & Central Asia","income":"High"},{"country":"Iceland","iso3":"ISL","cl":"C2","ppi":39.81,"life_exp":78.84,"gdp":28437.6,"pop":267597,"region":"Europe & Central Asia","income":"High"},{"country":"India","iso3":"IND","cl":"C3","ppi":44.45,"life_exp":60.65,"gdp":376.1,"pop":960824176,"region":"South Asia","income":"Lower-Middle"},{"country":"Indonesia","iso3":"IDN","cl":"C4","ppi":21.25,"life_exp":65.07,"gdp":785.8,"pop":199887074,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Iran, Islamic Rep.","iso3":"IRN","cl":"C1","ppi":44.86,"life_exp":67.77,"gdp":1713.6,"pop":62507869,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Iraq","iso3":"IRQ","cl":"C1","ppi":43.04,"life_exp":63.82,"gdp":1549.9,"pop":20767187,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Ireland","iso3":"IRL","cl":"C2","ppi":70.09,"life_exp":75.68,"gdp":19446.0,"pop":3633314,"region":"Europe & Central Asia","income":"High"},{"country":"Israel","iso3":"ISR","cl":"C2","ppi":44.37,"life_exp":77.61,"gdp":17871.6,"pop":5531818,"region":"Middle East & North Africa","income":"High"},{"country":"Italy","iso3":"ITA","cl":"C2","ppi":45.53,"life_exp":78.25,"gdp":21333.3,"pop":56846381,"region":"Europe & Central Asia","income":"High"},{"country":"Japan","iso3":"JPN","cl":"C2","ppi":29.8,"life_exp":79.83,"gdp":35517.3,"pop":125366727,"region":"East Asia & Pacific","income":"High"},{"country":"Jordan","iso3":"JOR","cl":"C1","ppi":36.61,"life_exp":70.96,"gdp":1373.7,"pop":4646613,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Kazakhstan","iso3":"KAZ","cl":"C1","ppi":51.55,"life_exp":64.17,"gdp":1329.0,"pop":16534373,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Kenya","iso3":"KEN","cl":"C3","ppi":27.66,"life_exp":56.4,"gdp":376.8,"pop":26655275,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Korea, Rep.","iso3":"KOR","cl":"C1","ppi":36.24,"life_exp":73.76,"gdp":10457.4,"pop":45021060,"region":"East Asia & Pacific","income":"High"},{"country":"Kuwait","iso3":"KWT","cl":"C2","ppi":56.01,"life_exp":75.59,"gdp":14640.2,"pop":1718743,"region":"Middle East & North Africa","income":"High"},{"country":"Lesotho","iso3":"LSO","cl":"C3","ppi":45.33,"life_exp":55.35,"gdp":446.2,"pop":1933820,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Libya","iso3":"LBY","cl":"C1","ppi":41.05,"life_exp":70.32,"gdp":6320.3,"pop":4891610,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Luxembourg","iso3":"LUX","cl":"C2","ppi":51.27,"life_exp":76.42,"gdp":44352.7,"pop":408654,"region":"Europe & Central Asia","income":"High"},{"country":"Madagascar","iso3":"MDG","cl":"C3","ppi":24.54,"life_exp":54.93,"gdp":288.6,"pop":14149829,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Malawi","iso3":"MWI","cl":"C3","ppi":23.35,"life_exp":44.16,"gdp":265.0,"pop":10381370,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Malaysia","iso3":"MYS","cl":"C1","ppi":45.65,"life_exp":71.93,"gdp":3663.0,"pop":20365389,"region":"East Asia & Pacific","income":"High"},{"country":"Mali","iso3":"MLI","cl":"C3","ppi":37.09,"life_exp":48.39,"gdp":345.2,"pop":10251135,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Mauritania","iso3":"MRT","cl":"C1","ppi":55.59,"life_exp":59.18,"gdp":866.9,"pop":2289530,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Mexico","iso3":"MEX","cl":"C1","ppi":39.76,"life_exp":70.74,"gdp":5237.9,"pop":90805584,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Moldova","iso3":"MDA","cl":"C1","ppi":50.85,"life_exp":66.88,"gdp":694.4,"pop":2955507,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Mongolia","iso3":"MNG","cl":"C1","ppi":46.91,"life_exp":61.1,"gdp":625.1,"pop":2239226,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Morocco","iso3":"MAR","cl":"C1","ppi":41.22,"life_exp":64.7,"gdp":1429.7,"pop":26408688,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Mozambique","iso3":"MOZ","cl":"C3","ppi":16.41,"life_exp":46.72,"gdp":262.2,"pop":15613873,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Myanmar","iso3":"MMR","cl":"C3","ppi":16.38,"life_exp":58.76,"gdp":113.7,"pop":42593152,"region":"East Asia & Pacific","income":"Lower-Middle"},{"country":"Nepal","iso3":"NPL","cl":"C3","ppi":26.53,"life_exp":59.07,"gdp":195.7,"pop":22147931,"region":"South Asia","income":"Lower-Middle"},{"country":"Netherlands","iso3":"NLD","cl":"C2","ppi":56.61,"life_exp":77.43,"gdp":25676.6,"pop":15447604,"region":"Europe & Central Asia","income":"High"},{"country":"New Zealand","iso3":"NZL","cl":"C2","ppi":56.49,"life_exp":76.94,"gdp":14857.4,"pop":3658481,"region":"East Asia & Pacific","income":"High"},{"country":"Niger","iso3":"NER","cl":"C3","ppi":39.12,"life_exp":45.44,"gdp":281.8,"pop":9787403,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Nigeria","iso3":"NGA","cl":"C3","ppi":39.03,"life_exp":45.99,"gdp":947.4,"pop":111170609,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Norway","iso3":"NOR","cl":"C2","ppi":25.71,"life_exp":77.71,"gdp":32985.9,"pop":4360748,"region":"Europe & Central Asia","income":"High"},{"country":"Pakistan","iso3":"PAK","cl":"C3","ppi":43.21,"life_exp":60.53,"gdp":432.6,"pop":135015367,"region":"South Asia","income":"Lower-Middle"},{"country":"Peru","iso3":"PER","cl":"C1","ppi":34.05,"life_exp":66.98,"gdp":1854.3,"pop":24336120,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Philippines","iso3":"PHL","cl":"C4","ppi":33.23,"life_exp":66.23,"gdp":1038.4,"pop":70866175,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Poland","iso3":"POL","cl":"C1","ppi":44.92,"life_exp":72.04,"gdp":3388.1,"pop":38470555,"region":"Europe & Central Asia","income":"High"},{"country":"Portugal","iso3":"PRT","cl":"C1","ppi":32.01,"life_exp":75.06,"gdp":10809.9,"pop":10065378,"region":"Europe & Central Asia","income":"High"},{"country":"Qatar","iso3":"QAT","cl":"C2","ppi":80.08,"life_exp":74.37,"gdp":17870.4,"pop":525505,"region":"Middle East & North Africa","income":"High"},{"country":"Romania","iso3":"ROU","cl":"C1","ppi":41.41,"life_exp":69.77,"gdp":1496.3,"pop":22706397,"region":"Europe & Central Asia","income":"High"},{"country":"Russian Federation","iso3":"RUS","cl":"C1","ppi":32.17,"life_exp":66.31,"gdp":2605.5,"pop":147972928,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Rwanda","iso3":"RWA","cl":"C3","ppi":33.94,"life_exp":41.47,"gdp":241.6,"pop":7449151,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Saudi Arabia","iso3":"SAU","cl":"C2","ppi":64.28,"life_exp":70.87,"gdp":11084.1,"pop":13320108,"region":"Middle East & North Africa","income":"High"},{"country":"Senegal","iso3":"SEN","cl":"C3","ppi":36.9,"life_exp":57.22,"gdp":758.0,"pop":8841188,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Singapore","iso3":"SGP","cl":"C2","ppi":100.0,"life_exp":76.52,"gdp":20667.7,"pop":3550045,"region":"East Asia & Pacific","income":"High"},{"country":"South Africa","iso3":"ZAF","cl":"C1","ppi":47.48,"life_exp":61.29,"gdp":3421.0,"pop":44329483,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Spain","iso3":"ESP","cl":"C2","ppi":40.77,"life_exp":77.97,"gdp":14868.2,"pop":39704662,"region":"Europe & Central Asia","income":"High"},{"country":"Sri Lanka","iso3":"LKA","cl":"C4","ppi":26.59,"life_exp":69.96,"gdp":707.7,"pop":17674532,"region":"South Asia","income":"Upper-Middle"},{"country":"Sweden","iso3":"SWE","cl":"C2","ppi":22.2,"life_exp":78.66,"gdp":30029.3,"pop":8767139,"region":"Europe & Central Asia","income":"High"},{"country":"Switzerland","iso3":"CHE","cl":"C2","ppi":40.6,"life_exp":78.54,"gdp":42290.3,"pop":6996600,"region":"Europe & Central Asia","income":"High"},{"country":"Syrian Arab Republic","iso3":"SYR","cl":"C1","ppi":48.97,"life_exp":70.26,"gdp":944.5,"pop":14608061,"region":"Middle East & North Africa","income":"Lower-Middle"},{"country":"Tajikistan","iso3":"TJK","cl":"C3","ppi":34.94,"life_exp":60.84,"gdp":262.4,"pop":5905833,"region":"Europe & Central Asia","income":"Lower-Middle"},{"country":"Tanzania","iso3":"TZA","cl":"C3","ppi":12.13,"life_exp":51.67,"gdp":303.6,"pop":30091959,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Thailand","iso3":"THA","cl":"C4","ppi":37.14,"life_exp":69.96,"gdp":2212.6,"pop":59013274,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Togo","iso3":"TGO","cl":"C3","ppi":37.2,"life_exp":54.06,"gdp":460.7,"pop":4499388,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Tunisia","iso3":"TUN","cl":"C1","ppi":42.26,"life_exp":70.84,"gdp":1938.1,"pop":9111339,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Turkiye","iso3":"TUR","cl":"C1","ppi":36.22,"life_exp":69.78,"gdp":3446.0,"pop":60875409,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Turkmenistan","iso3":"TKM","cl":"C1","ppi":51.12,"life_exp":63.88,"gdp":671.6,"pop":4180665,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Uganda","iso3":"UGA","cl":"C3","ppi":28.96,"life_exp":48.05,"gdp":236.6,"pop":20690117,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Ukraine","iso3":"UKR","cl":"C1","ppi":51.1,"life_exp":68.22,"gdp":1057.2,"pop":51324201,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"United Arab Emirates","iso3":"ARE","cl":"C2","ppi":65.27,"life_exp":72.41,"gdp":26588.6,"pop":2565408,"region":"Middle East & North Africa","income":"High"},{"country":"United Kingdom","iso3":"GBR","cl":"C2","ppi":53.76,"life_exp":76.83,"gdp":23444.2,"pop":58036572,"region":"Europe & Central Asia","income":"High"},{"country":"United States","iso3":"USA","cl":"C2","ppi":45.71,"life_exp":75.92,"gdp":29231.7,"pop":266140764,"region":"North America","income":"High"},{"country":"Uruguay","iso3":"URY","cl":"C1","ppi":41.46,"life_exp":73.63,"gdp":5729.7,"pop":3188568,"region":"Latin America & Caribbean","income":"High"},{"country":"Uzbekistan","iso3":"UZB","cl":"C1","ppi":52.16,"life_exp":65.14,"gdp":614.4,"pop":22799156,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Venezuela, RB","iso3":"VEN","cl":"C1","ppi":28.65,"life_exp":71.74,"gdp":3321.2,"pop":22188619,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Viet Nam","iso3":"VNM","cl":"C4","ppi":25.15,"life_exp":70.88,"gdp":266.7,"pop":71751985,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Yemen, Rep.","iso3":"YEM","cl":"C3","ppi":45.57,"life_exp":60.51,"gdp":819.6,"pop":16731578,"region":"Middle East & North Africa","income":"Lower-Middle"},{"country":"Zambia","iso3":"ZMB","cl":"C3","ppi":13.69,"life_exp":46.49,"gdp":403.0,"pop":8832873,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Zimbabwe","iso3":"ZWE","cl":"C3","ppi":21.01,"life_exp":51.46,"gdp":675.6,"pop":11068257,"region":"Sub-Saharan Africa","income":"Lower-Middle"}],"2000\u20132010":[{"country":"Afghanistan","iso3":"AFG","cl":"C3","ppi":63.59,"life_exp":58.31,"gdp":303.7,"pop":24592745,"region":"South Asia","income":"Lower-Middle"},{"country":"Albania","iso3":"ALB","cl":"C1","ppi":33.43,"life_exp":76.82,"gdp":2956.6,"pop":2993964,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Algeria","iso3":"DZA","cl":"C1","ppi":40.91,"life_exp":72.8,"gdp":3432.5,"pop":33530397,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Angola","iso3":"AGO","cl":"C3","ppi":17.86,"life_exp":52.43,"gdp":2503.4,"pop":19799229,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Argentina","iso3":"ARG","cl":"C1","ppi":42.64,"life_exp":74.96,"gdp":6275.0,"pop":39431771,"region":"Latin America & Caribbean","income":"High"},{"country":"Armenia","iso3":"ARM","cl":"C1","ppi":48.47,"life_exp":72.97,"gdp":1961.6,"pop":3133780,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Australia","iso3":"AUS","cl":"C2","ppi":49.97,"life_exp":80.81,"gdp":35211.5,"pop":20485140,"region":"East Asia & Pacific","income":"High"},{"country":"Austria","iso3":"AUT","cl":"C2","ppi":35.13,"life_exp":79.58,"gdp":39070.2,"pop":8223781,"region":"Europe & Central Asia","income":"High"},{"country":"Bahrain","iso3":"BHR","cl":"C2","ppi":94.67,"life_exp":76.51,"gdp":18025.1,"pop":935912,"region":"Middle East & North Africa","income":"High"},{"country":"Bangladesh","iso3":"BGD","cl":"C3","ppi":52.75,"life_exp":65.62,"gdp":522.9,"pop":145127367,"region":"South Asia","income":"Lower-Middle"},{"country":"Belgium","iso3":"BEL","cl":"C2","ppi":54.87,"life_exp":79.11,"gdp":37136.4,"pop":10547095,"region":"Europe & Central Asia","income":"High"},{"country":"Benin","iso3":"BEN","cl":"C3","ppi":31.58,"life_exp":57.66,"gdp":803.2,"pop":8580191,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Bolivia","iso3":"BOL","cl":"C1","ppi":36.92,"life_exp":64.35,"gdp":1259.6,"pop":9452595,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Botswana","iso3":"BWA","cl":"C3","ppi":34.4,"life_exp":55.23,"gdp":4852.4,"pop":1863924,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Brazil","iso3":"BRA","cl":"C1","ppi":20.08,"life_exp":71.98,"gdp":5994.9,"pop":185414522,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Bulgaria","iso3":"BGR","cl":"C1","ppi":43.8,"life_exp":72.6,"gdp":4539.8,"pop":7647642,"region":"Europe & Central Asia","income":"High"},{"country":"Burkina Faso","iso3":"BFA","cl":"C3","ppi":36.8,"life_exp":53.6,"gdp":456.9,"pop":14182575,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Burundi","iso3":"BDI","cl":"C3","ppi":39.17,"life_exp":53.26,"gdp":157.0,"pop":7825675,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Cambodia","iso3":"KHM","cl":"C4","ppi":14.98,"life_exp":64.22,"gdp":607.3,"pop":13556043,"region":"East Asia & Pacific","income":"Lower-Middle"},{"country":"Cameroon","iso3":"CMR","cl":"C3","ppi":19.18,"life_exp":55.18,"gdp":1163.9,"pop":17383683,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Canada","iso3":"CAN","cl":"C2","ppi":35.39,"life_exp":80.3,"gdp":36521.9,"pop":32454740,"region":"North America","income":"High"},{"country":"Chad","iso3":"TCD","cl":"C3","ppi":38.1,"life_exp":49.02,"gdp":721.8,"pop":10512698,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Chile","iso3":"CHL","cl":"C1","ppi":36.9,"life_exp":78.4,"gdp":8044.9,"pop":16431358,"region":"Latin America & Caribbean","income":"High"},{"country":"China","iso3":"CHN","cl":"C1","ppi":58.84,"life_exp":74.19,"gdp":2375.9,"pop":1306297000,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Colombia","iso3":"COL","cl":"C1","ppi":32.96,"life_exp":73.18,"gdp":3923.9,"pop":42337764,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Congo, Dem. Rep.","iso3":"COD","cl":"C3","ppi":4.8,"life_exp":54.21,"gdp":239.7,"pop":59945990,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Costa Rica","iso3":"CRI","cl":"C1","ppi":36.1,"life_exp":78.72,"gdp":5479.0,"pop":4288215,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Cote d'Ivoire","iso3":"CIV","cl":"C3","ppi":42.59,"life_exp":52.93,"gdp":1267.7,"pop":20320048,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Cuba","iso3":"CUB","cl":"C1","ppi":39.95,"life_exp":77.35,"gdp":4072.2,"pop":11248195,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Czechia","iso3":"CZE","cl":"C1","ppi":46.7,"life_exp":76.19,"gdp":14631.2,"pop":10285651,"region":"Europe & Central Asia","income":"High"},{"country":"Denmark","iso3":"DNK","cl":"C2","ppi":51.2,"life_exp":77.86,"gdp":49198.0,"pop":5441235,"region":"Europe & Central Asia","income":"High"},{"country":"Dominican Republic","iso3":"DOM","cl":"C1","ppi":34.03,"life_exp":71.1,"gdp":3889.6,"pop":9276847,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Ecuador","iso3":"ECU","cl":"C1","ppi":35.69,"life_exp":74.02,"gdp":3115.2,"pop":13976913,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Egypt, Arab Rep.","iso3":"EGY","cl":"C1","ppi":59.11,"life_exp":68.39,"gdp":1490.0,"pop":81886228,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"El Salvador","iso3":"SLV","cl":"C1","ppi":40.62,"life_exp":69.48,"gdp":2554.4,"pop":6012150,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Ethiopia","iso3":"ETH","cl":"C3","ppi":22.38,"life_exp":55.26,"gdp":207.8,"pop":79729714,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Finland","iso3":"FIN","cl":"C2","ppi":22.78,"life_exp":78.96,"gdp":39913.4,"pop":5264649,"region":"Europe & Central Asia","income":"High"},{"country":"France","iso3":"FRA","cl":"C2","ppi":48.21,"life_exp":80.41,"gdp":35010.3,"pop":63306181,"region":"Europe & Central Asia","income":"High"},{"country":"Germany","iso3":"DEU","cl":"C2","ppi":47.03,"life_exp":79.08,"gdp":36030.7,"pop":82279043,"region":"Europe & Central Asia","income":"High"},{"country":"Ghana","iso3":"GHA","cl":"C3","ppi":38.27,"life_exp":59.81,"gdp":725.5,"pop":22778148,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Greece","iso3":"GRC","cl":"C2","ppi":48.83,"life_exp":79.35,"gdp":22809.4,"pop":11000971,"region":"Europe & Central Asia","income":"High"},{"country":"Hungary","iso3":"HUN","cl":"C1","ppi":50.07,"life_exp":73.03,"gdp":10926.9,"pop":10085795,"region":"Europe & Central Asia","income":"High"},{"country":"Iceland","iso3":"ISL","cl":"C2","ppi":51.5,"life_exp":81.25,"gdp":47890.0,"pop":302012,"region":"Europe & Central Asia","income":"High"},{"country":"India","iso3":"IND","cl":"C3","ppi":51.54,"life_exp":65.16,"gdp":805.7,"pop":1162346198,"region":"South Asia","income":"Lower-Middle"},{"country":"Indonesia","iso3":"IDN","cl":"C4","ppi":24.63,"life_exp":67.4,"gdp":1581.2,"pop":232572994,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Iran, Islamic Rep.","iso3":"IRN","cl":"C1","ppi":51.6,"life_exp":72.5,"gdp":3717.7,"pop":72370569,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Iraq","iso3":"IRQ","cl":"C1","ppi":48.28,"life_exp":65.62,"gdp":2473.5,"pop":28107511,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Ireland","iso3":"IRL","cl":"C2","ppi":70.89,"life_exp":79.03,"gdp":47871.4,"pop":4228249,"region":"Europe & Central Asia","income":"High"},{"country":"Israel","iso3":"ISR","cl":"C2","ppi":48.51,"life_exp":80.38,"gdp":24000.6,"pop":7008960,"region":"Middle East & North Africa","income":"High"},{"country":"Italy","iso3":"ITA","cl":"C2","ppi":47.14,"life_exp":80.98,"gdp":31915.9,"pop":58320300,"region":"Europe & Central Asia","income":"High"},{"country":"Japan","iso3":"JPN","cl":"C2","ppi":29.62,"life_exp":82.2,"gdp":37665.0,"pop":127788100,"region":"East Asia & Pacific","income":"High"},{"country":"Jordan","iso3":"JOR","cl":"C1","ppi":41.87,"life_exp":73.05,"gdp":2438.7,"pop":6345169,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Kazakhstan","iso3":"KAZ","cl":"C1","ppi":58.5,"life_exp":65.81,"gdp":4658.8,"pop":16104199,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Kenya","iso3":"KEN","cl":"C3","ppi":29.92,"life_exp":58.69,"gdp":683.9,"pop":36456530,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Korea, Rep.","iso3":"KOR","cl":"C2","ppi":39.19,"life_exp":78.36,"gdp":19207.4,"pop":48421289,"region":"East Asia & Pacific","income":"High"},{"country":"Kuwait","iso3":"KWT","cl":"C2","ppi":75.01,"life_exp":76.93,"gdp":34361.3,"pop":2383498,"region":"Middle East & North Africa","income":"High"},{"country":"Lesotho","iso3":"LSO","cl":"C3","ppi":42.73,"life_exp":44.79,"gdp":769.6,"pop":1974680,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Libya","iso3":"LBY","cl":"C1","ppi":48.71,"life_exp":71.47,"gdp":8481.0,"pop":5931148,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Luxembourg","iso3":"LUX","cl":"C2","ppi":58.08,"life_exp":79.25,"gdp":86366.0,"pop":470859,"region":"Europe & Central Asia","income":"High"},{"country":"Madagascar","iso3":"MDG","cl":"C3","ppi":27.31,"life_exp":60.79,"gdp":370.7,"pop":19512497,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Malawi","iso3":"MWI","cl":"C3","ppi":28.41,"life_exp":52.71,"gdp":462.5,"pop":13096955,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Malaysia","iso3":"MYS","cl":"C1","ppi":61.5,"life_exp":74.41,"gdp":6087.8,"pop":26116837,"region":"East Asia & Pacific","income":"High"},{"country":"Mali","iso3":"MLI","cl":"C3","ppi":44.29,"life_exp":53.88,"gdp":582.0,"pop":13829565,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Mauritania","iso3":"MRT","cl":"C3","ppi":62.83,"life_exp":63.98,"gdp":1129.2,"pop":2999258,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Mexico","iso3":"MEX","cl":"C1","ppi":42.25,"life_exp":73.5,"gdp":8821.4,"pop":106685780,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Mongolia","iso3":"MNG","cl":"C1","ppi":52.29,"life_exp":65.66,"gdp":1294.0,"pop":2563392,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Morocco","iso3":"MAR","cl":"C1","ppi":48.05,"life_exp":68.99,"gdp":2403.5,"pop":30595756,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Mozambique","iso3":"MOZ","cl":"C3","ppi":16.78,"life_exp":52.59,"gdp":439.6,"pop":20631816,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Myanmar","iso3":"MMR","cl":"C3","ppi":16.7,"life_exp":61.33,"gdp":414.0,"pop":47516393,"region":"East Asia & Pacific","income":"Lower-Middle"},{"country":"Nepal","iso3":"NPL","cl":"C4","ppi":26.61,"life_exp":65.29,"gdp":356.4,"pop":26314954,"region":"South Asia","income":"Lower-Middle"},{"country":"Netherlands","iso3":"NLD","cl":"C2","ppi":59.6,"life_exp":79.47,"gdp":43502.5,"pop":16334123,"region":"Europe & Central Asia","income":"High"},{"country":"New Zealand","iso3":"NZL","cl":"C2","ppi":70.36,"life_exp":79.82,"gdp":25834.0,"pop":4139910,"region":"East Asia & Pacific","income":"High"},{"country":"Niger","iso3":"NER","cl":"C3","ppi":48.28,"life_exp":53.65,"gdp":342.9,"pop":14101541,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Nigeria","iso3":"NGA","cl":"C3","ppi":42.08,"life_exp":49.63,"gdp":1380.8,"pop":147524348,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Norway","iso3":"NOR","cl":"C2","ppi":26.99,"life_exp":80.02,"gdp":68279.0,"pop":4668798,"region":"Europe & Central Asia","income":"High"},{"country":"Pakistan","iso3":"PAK","cl":"C3","ppi":49.47,"life_exp":63.32,"gdp":839.9,"pop":178363353,"region":"South Asia","income":"Lower-Middle"},{"country":"Peru","iso3":"PER","cl":"C1","ppi":32.25,"life_exp":71.92,"gdp":3133.2,"pop":28134373,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Philippines","iso3":"PHL","cl":"C4","ppi":37.26,"life_exp":68.34,"gdp":1445.7,"pop":88761731,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Poland","iso3":"POL","cl":"C1","ppi":47.75,"life_exp":75.1,"gdp":8922.9,"pop":38161266,"region":"Europe & Central Asia","income":"High"},{"country":"Portugal","iso3":"PRT","cl":"C1","ppi":35.33,"life_exp":77.99,"gdp":19061.6,"pop":10499314,"region":"Europe & Central Asia","income":"High"},{"country":"Qatar","iso3":"QAT","cl":"C2","ppi":100.0,"life_exp":77.23,"gdp":52625.2,"pop":1056665,"region":"Middle East & North Africa","income":"High"},{"country":"Romania","iso3":"ROU","cl":"C1","ppi":43.14,"life_exp":72.1,"gdp":5623.8,"pop":21143720,"region":"Europe & Central Asia","income":"High"},{"country":"Russian Federation","iso3":"RUS","cl":"C1","ppi":31.77,"life_exp":66.63,"gdp":6377.3,"pop":143774966,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Rwanda","iso3":"RWA","cl":"C3","ppi":37.32,"life_exp":56.99,"gdp":378.3,"pop":9217695,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Saudi Arabia","iso3":"SAU","cl":"C2","ppi":83.0,"life_exp":74.45,"gdp":16023.6,"pop":20927991,"region":"Middle East & North Africa","income":"High"},{"country":"Senegal","iso3":"SEN","cl":"C3","ppi":39.57,"life_exp":61.35,"gdp":1021.2,"pop":11390370,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"South Africa","iso3":"ZAF","cl":"C3","ppi":55.21,"life_exp":55.63,"gdp":5385.8,"pop":49828204,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Spain","iso3":"ESP","cl":"C2","ppi":44.07,"life_exp":80.46,"gdp":26499.3,"pop":43956273,"region":"Europe & Central Asia","income":"High"},{"country":"Sri Lanka","iso3":"LKA","cl":"C4","ppi":30.69,"life_exp":72.07,"gdp":1459.7,"pop":20277162,"region":"South Asia","income":"Upper-Middle"},{"country":"Sweden","iso3":"SWE","cl":"C2","ppi":19.6,"life_exp":80.63,"gdp":43581.3,"pop":9092712,"region":"Europe & Central Asia","income":"High"},{"country":"Switzerland","iso3":"CHE","cl":"C2","ppi":41.07,"life_exp":81.29,"gdp":58861.1,"pop":7493181,"region":"Europe & Central Asia","income":"High"},{"country":"Syrian Arab Republic","iso3":"SYR","cl":"C1","ppi":56.39,"life_exp":72.72,"gdp":1777.1,"pop":19617703,"region":"Middle East & North Africa","income":"Lower-Middle"},{"country":"Tanzania","iso3":"TZA","cl":"C3","ppi":13.15,"life_exp":57.88,"gdp":528.0,"pop":39839451,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Thailand","iso3":"THA","cl":"C1","ppi":42.29,"life_exp":73.14,"gdp":3250.5,"pop":66224564,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Togo","iso3":"TGO","cl":"C3","ppi":40.86,"life_exp":55.99,"gdp":579.6,"pop":5963624,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Tunisia","iso3":"TUN","cl":"C1","ppi":49.61,"life_exp":73.73,"gdp":3317.3,"pop":10308186,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Turkiye","iso3":"TUR","cl":"C1","ppi":41.82,"life_exp":73.65,"gdp":7305.1,"pop":69548432,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Turkmenistan","iso3":"TKM","cl":"C1","ppi":58.16,"life_exp":66.7,"gdp":2168.7,"pop":5107121,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Uganda","iso3":"UGA","cl":"C3","ppi":33.38,"life_exp":55.38,"gdp":419.5,"pop":28457741,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Ukraine","iso3":"UKR","cl":"C1","ppi":53.81,"life_exp":68.08,"gdp":2124.8,"pop":47590473,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"United Arab Emirates","iso3":"ARE","cl":"C2","ppi":75.41,"life_exp":80.47,"gdp":38010.4,"pop":5147992,"region":"Middle East & North Africa","income":"High"},{"country":"United Kingdom","iso3":"GBR","cl":"C2","ppi":58.36,"life_exp":79.11,"gdp":39723.8,"pop":60754575,"region":"Europe & Central Asia","income":"High"},{"country":"United States","iso3":"USA","cl":"C2","ppi":50.22,"life_exp":77.64,"gdp":43923.0,"pop":297087881,"region":"North America","income":"High"},{"country":"Uruguay","iso3":"URY","cl":"C1","ppi":45.29,"life_exp":75.79,"gdp":6882.6,"pop":3291873,"region":"Latin America & Caribbean","income":"High"},{"country":"Uzbekistan","iso3":"UZB","cl":"C1","ppi":56.37,"life_exp":67.85,"gdp":774.2,"pop":26618250,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Venezuela, RB","iso3":"VEN","cl":"C1","ppi":30.91,"life_exp":72.65,"gdp":7308.0,"pop":26961408,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Viet Nam","iso3":"VNM","cl":"C4","ppi":32.35,"life_exp":73.29,"gdp":844.4,"pop":82262487,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Yemen, Rep.","iso3":"YEM","cl":"C3","ppi":51.16,"life_exp":65.45,"gdp":780.7,"pop":23305808,"region":"Middle East & North Africa","income":"Lower-Middle"},{"country":"Zambia","iso3":"ZMB","cl":"C3","ppi":11.77,"life_exp":52.17,"gdp":863.0,"pop":12018569,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Zimbabwe","iso3":"ZWE","cl":"C3","ppi":18.68,"life_exp":47.32,"gdp":531.4,"pop":12604019,"region":"Sub-Saharan Africa","income":"Lower-Middle"}],"2010\u20132023":[{"country":"Afghanistan","iso3":"AFG","cl":"C1","ppi":72.04,"life_exp":62.59,"gdp":520.0,"pop":35711264,"region":"South Asia","income":"Lower-Middle"},{"country":"Albania","iso3":"ALB","cl":"C4","ppi":33.41,"life_exp":78.47,"gdp":5728.6,"pop":2652702,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Algeria","iso3":"DZA","cl":"C4","ppi":42.89,"life_exp":75.14,"gdp":4997.7,"pop":41613282,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Angola","iso3":"AGO","cl":"C3","ppi":22.98,"life_exp":61.73,"gdp":3594.2,"pop":30333778,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Argentina","iso3":"ARG","cl":"C4","ppi":43.58,"life_exp":76.15,"gdp":12382.3,"pop":44018771,"region":"Latin America & Caribbean","income":"High"},{"country":"Australia","iso3":"AUS","cl":"C2","ppi":48.89,"life_exp":82.63,"gdp":59934.0,"pop":24506783,"region":"East Asia & Pacific","income":"High"},{"country":"Austria","iso3":"AUT","cl":"C2","ppi":32.2,"life_exp":81.37,"gdp":49960.7,"pop":8753189,"region":"Europe & Central Asia","income":"High"},{"country":"Bahrain","iso3":"BHR","cl":"C2","ppi":95.6,"life_exp":80.0,"gdp":26312.9,"pop":1410159,"region":"Middle East & North Africa","income":"High"},{"country":"Bangladesh","iso3":"BGD","cl":"C1","ppi":63.57,"life_exp":71.26,"gdp":1733.0,"pop":162214186,"region":"South Asia","income":"Lower-Middle"},{"country":"Belgium","iso3":"BEL","cl":"C2","ppi":51.13,"life_exp":81.31,"gdp":47080.4,"pop":11384263,"region":"Europe & Central Asia","income":"High"},{"country":"Benin","iso3":"BEN","cl":"C1","ppi":39.74,"life_exp":59.5,"gdp":1156.5,"pop":12060972,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Bolivia","iso3":"BOL","cl":"C4","ppi":32.49,"life_exp":66.51,"gdp":3490.7,"pop":11322328,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Botswana","iso3":"BWA","cl":"C1","ppi":37.99,"life_exp":64.53,"gdp":7118.0,"pop":2270643,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Brazil","iso3":"BRA","cl":"C4","ppi":24.16,"life_exp":74.85,"gdp":10118.6,"pop":204118643,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Bulgaria","iso3":"BGR","cl":"C4","ppi":42.34,"life_exp":74.35,"gdp":9901.3,"pop":6835910,"region":"Europe & Central Asia","income":"High"},{"country":"Burkina Faso","iso3":"BFA","cl":"C1","ppi":41.22,"life_exp":59.28,"gdp":765.2,"pop":19859600,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Burundi","iso3":"BDI","cl":"C1","ppi":44.15,"life_exp":60.98,"gdp":248.8,"pop":11656136,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Cambodia","iso3":"KHM","cl":"C3","ppi":21.56,"life_exp":69.51,"gdp":1795.0,"pop":16066560,"region":"East Asia & Pacific","income":"Lower-Middle"},{"country":"Cameroon","iso3":"CMR","cl":"C3","ppi":22.14,"life_exp":60.47,"gdp":1558.5,"pop":24176502,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Canada","iso3":"CAN","cl":"C2","ppi":35.72,"life_exp":81.71,"gdp":49178.8,"pop":36762083,"region":"North America","income":"High"},{"country":"Chad","iso3":"TCD","cl":"C1","ppi":41.97,"life_exp":52.26,"gdp":1040.5,"pop":15761528,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Chile","iso3":"CHL","cl":"C4","ppi":37.85,"life_exp":79.85,"gdp":14912.0,"pop":18571201,"region":"Latin America & Caribbean","income":"High"},{"country":"China","iso3":"CHN","cl":"C4","ppi":63.67,"life_exp":77.28,"gdp":9408.6,"pop":1388849230,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Colombia","iso3":"COL","cl":"C4","ppi":36.69,"life_exp":75.87,"gdp":6861.3,"pop":48541591,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Congo, Dem. Rep.","iso3":"COD","cl":"C3","ppi":8.24,"life_exp":59.31,"gdp":505.5,"pop":87437894,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Costa Rica","iso3":"CRI","cl":"C4","ppi":37.89,"life_exp":79.89,"gdp":12193.5,"pop":4891862,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Cote d'Ivoire","iso3":"CIV","cl":"C1","ppi":51.15,"life_exp":59.06,"gdp":2030.5,"pop":26819876,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Cuba","iso3":"CUB","cl":"C4","ppi":41.0,"life_exp":77.37,"gdp":7874.8,"pop":11214263,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Czechia","iso3":"CZE","cl":"C4","ppi":45.31,"life_exp":78.62,"gdp":22995.6,"pop":10599608,"region":"Europe & Central Asia","income":"High"},{"country":"Denmark","iso3":"DNK","cl":"C2","ppi":46.42,"life_exp":80.93,"gdp":61242.1,"pop":5749477,"region":"Europe & Central Asia","income":"High"},{"country":"Djibouti","iso3":"DJI","cl":"C1","ppi":65.95,"life_exp":63.5,"gdp":2495.6,"pop":1053286,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Dominican Republic","iso3":"DOM","cl":"C4","ppi":37.57,"life_exp":73.06,"gdp":7562.3,"pop":10657566,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Ecuador","iso3":"ECU","cl":"C4","ppi":32.46,"life_exp":75.73,"gdp":6055.2,"pop":16745663,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Egypt, Arab Rep.","iso3":"EGY","cl":"C4","ppi":61.23,"life_exp":70.24,"gdp":3168.8,"pop":103285820,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"El Salvador","iso3":"SLV","cl":"C4","ppi":42.06,"life_exp":71.17,"gdp":4105.5,"pop":6202032,"region":"Latin America & Caribbean","income":"Lower-Middle"},{"country":"Ethiopia","iso3":"ETH","cl":"C3","ppi":26.28,"life_exp":64.32,"gdp":696.8,"pop":110176049,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Finland","iso3":"FIN","cl":"C2","ppi":19.05,"life_exp":81.4,"gdp":48745.3,"pop":5494883,"region":"Europe & Central Asia","income":"High"},{"country":"France","iso3":"FRA","cl":"C2","ppi":45.2,"life_exp":82.43,"gdp":41033.4,"pop":66926150,"region":"Europe & Central Asia","income":"High"},{"country":"Gabon","iso3":"GAB","cl":"C3","ppi":5.55,"life_exp":66.67,"gdp":8048.1,"pop":2147180,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Germany","iso3":"DEU","cl":"C2","ppi":44.0,"life_exp":80.8,"gdp":47734.4,"pop":82141690,"region":"Europe & Central Asia","income":"High"},{"country":"Ghana","iso3":"GHA","cl":"C1","ppi":44.91,"life_exp":63.64,"gdp":2044.6,"pop":29966028,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Greece","iso3":"GRC","cl":"C4","ppi":41.78,"life_exp":81.14,"gdp":20514.6,"pop":10763505,"region":"Europe & Central Asia","income":"High"},{"country":"Hungary","iso3":"HUN","cl":"C4","ppi":47.66,"life_exp":75.63,"gdp":15821.7,"pop":9752502,"region":"Europe & Central Asia","income":"High"},{"country":"Iceland","iso3":"ISL","cl":"C2","ppi":57.22,"life_exp":82.65,"gdp":63344.0,"pop":347728,"region":"Europe & Central Asia","income":"High"},{"country":"India","iso3":"IND","cl":"C1","ppi":59.48,"life_exp":69.58,"gdp":1856.5,"pop":1355664317,"region":"South Asia","income":"Lower-Middle"},{"country":"Indonesia","iso3":"IDN","cl":"C4","ppi":31.51,"life_exp":69.52,"gdp":3888.0,"pop":266515883,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Iran, Islamic Rep.","iso3":"IRN","cl":"C4","ppi":52.95,"life_exp":75.77,"gdp":5466.0,"pop":84662367,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Iraq","iso3":"IRQ","cl":"C4","ppi":49.56,"life_exp":70.12,"gdp":5511.9,"pop":39138926,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Ireland","iso3":"IRL","cl":"C2","ppi":69.8,"life_exp":81.86,"gdp":75167.8,"pop":4869421,"region":"Europe & Central Asia","income":"High"},{"country":"Israel","iso3":"ISR","cl":"C2","ppi":48.8,"life_exp":82.4,"gdp":42204.4,"pop":8732361,"region":"Middle East & North Africa","income":"High"},{"country":"Italy","iso3":"ITA","cl":"C2","ppi":41.28,"life_exp":82.85,"gdp":34806.5,"pop":59818856,"region":"Europe & Central Asia","income":"High"},{"country":"Japan","iso3":"JPN","cl":"C2","ppi":28.27,"life_exp":83.85,"gdp":39895.5,"pop":126646171,"region":"East Asia & Pacific","income":"High"},{"country":"Jordan","iso3":"JOR","cl":"C4","ppi":43.31,"life_exp":75.51,"gdp":4156.4,"pop":9799819,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Kazakhstan","iso3":"KAZ","cl":"C4","ppi":63.61,"life_exp":71.92,"gdp":10589.0,"pop":18659793,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Kenya","iso3":"KEN","cl":"C1","ppi":34.87,"life_exp":62.3,"gdp":1675.7,"pop":49119144,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Korea, Rep.","iso3":"KOR","cl":"C2","ppi":42.06,"life_exp":82.32,"gdp":32080.4,"pop":51172888,"region":"East Asia & Pacific","income":"High"},{"country":"Kuwait","iso3":"KWT","cl":"C2","ppi":90.53,"life_exp":79.74,"gdp":36822.0,"pop":4046703,"region":"Middle East & North Africa","income":"High"},{"country":"Lesotho","iso3":"LSO","cl":"C1","ppi":54.49,"life_exp":52.89,"gdp":1091.6,"pop":2158842,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Libya","iso3":"LBY","cl":"C4","ppi":47.93,"life_exp":72.02,"gdp":8704.4,"pop":6743634,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Luxembourg","iso3":"LUX","cl":"C2","ppi":51.27,"life_exp":82.27,"gdp":118172.5,"pop":593453,"region":"Europe & Central Asia","income":"High"},{"country":"Madagascar","iso3":"MDG","cl":"C3","ppi":29.93,"life_exp":63.19,"gdp":489.1,"pop":26881978,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Malawi","iso3":"MWI","cl":"C1","ppi":35.44,"life_exp":63.34,"gdp":569.6,"pop":18096091,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Malaysia","iso3":"MYS","cl":"C4","ppi":68.98,"life_exp":75.52,"gdp":10565.8,"pop":32262977,"region":"East Asia & Pacific","income":"High"},{"country":"Mali","iso3":"MLI","cl":"C1","ppi":46.3,"life_exp":58.37,"gdp":943.5,"pop":19919842,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Mauritania","iso3":"MRT","cl":"C1","ppi":67.34,"life_exp":66.88,"gdp":1807.9,"pop":4231259,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Mexico","iso3":"MEX","cl":"C4","ppi":41.56,"life_exp":73.68,"gdp":10589.4,"pop":123080771,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Morocco","iso3":"MAR","cl":"C4","ppi":50.17,"life_exp":73.27,"gdp":3400.4,"pop":35382191,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Mozambique","iso3":"MOZ","cl":"C3","ppi":21.61,"life_exp":59.7,"gdp":570.7,"pop":28351073,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Myanmar","iso3":"MMR","cl":"C3","ppi":20.18,"life_exp":65.6,"gdp":1263.5,"pop":51837570,"region":"East Asia & Pacific","income":"Lower-Middle"},{"country":"Nepal","iso3":"NPL","cl":"C4","ppi":33.79,"life_exp":68.52,"gdp":1041.8,"pop":28338270,"region":"South Asia","income":"Lower-Middle"},{"country":"Netherlands","iso3":"NLD","cl":"C2","ppi":55.73,"life_exp":81.56,"gdp":53623.9,"pop":17180626,"region":"Europe & Central Asia","income":"High"},{"country":"New Zealand","iso3":"NZL","cl":"C2","ppi":64.81,"life_exp":81.83,"gdp":43390.0,"pop":4784415,"region":"East Asia & Pacific","income":"High"},{"country":"Niger","iso3":"NER","cl":"C1","ppi":52.03,"life_exp":59.31,"gdp":557.2,"pop":21510536,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Nigeria","iso3":"NGA","cl":"C1","ppi":46.56,"life_exp":52.63,"gdp":2570.5,"pop":199913880,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Norway","iso3":"NOR","cl":"C2","ppi":25.73,"life_exp":82.43,"gdp":87987.0,"pop":5254841,"region":"Europe & Central Asia","income":"High"},{"country":"Pakistan","iso3":"PAK","cl":"C1","ppi":55.04,"life_exp":65.97,"gdp":1365.0,"pop":224682310,"region":"South Asia","income":"Lower-Middle"},{"country":"Peru","iso3":"PER","cl":"C4","ppi":27.16,"life_exp":75.16,"gdp":6707.1,"pop":31469179,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Philippines","iso3":"PHL","cl":"C4","ppi":38.07,"life_exp":69.33,"gdp":3093.3,"pop":107595670,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Poland","iso3":"POL","cl":"C4","ppi":46.17,"life_exp":77.23,"gdp":15477.7,"pop":37696639,"region":"Europe & Central Asia","income":"High"},{"country":"Portugal","iso3":"PRT","cl":"C4","ppi":34.32,"life_exp":81.23,"gdp":22648.2,"pop":10396622,"region":"Europe & Central Asia","income":"High"},{"country":"Qatar","iso3":"QAT","cl":"C2","ppi":100.0,"life_exp":81.59,"gdp":79740.3,"pop":2354974,"region":"Middle East & North Africa","income":"High"},{"country":"Romania","iso3":"ROU","cl":"C4","ppi":41.59,"life_exp":74.92,"gdp":11855.4,"pop":19580563,"region":"Europe & Central Asia","income":"High"},{"country":"Russian Federation","iso3":"RUS","cl":"C4","ppi":33.13,"life_exp":71.47,"gdp":12559.7,"pop":144484254,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Rwanda","iso3":"RWA","cl":"C1","ppi":40.97,"life_exp":65.91,"gdp":784.8,"pop":12224130,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Saudi Arabia","iso3":"SAU","cl":"C2","ppi":87.86,"life_exp":77.55,"gdp":28526.0,"pop":29801297,"region":"Middle East & North Africa","income":"High"},{"country":"Senegal","iso3":"SEN","cl":"C1","ppi":44.46,"life_exp":66.75,"gdp":1425.9,"pop":15480106,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Somalia, Fed. Rep.","iso3":"SOM","cl":"C1","ppi":38.28,"life_exp":53.09,"gdp":470.2,"pop":15050615,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"South Africa","iso3":"ZAF","cl":"C1","ppi":57.61,"life_exp":64.05,"gdp":6747.6,"pop":58040485,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Spain","iso3":"ESP","cl":"C2","ppi":40.36,"life_exp":83.1,"gdp":29428.6,"pop":46990364,"region":"Europe & Central Asia","income":"High"},{"country":"Sri Lanka","iso3":"LKA","cl":"C4","ppi":32.2,"life_exp":76.21,"gdp":3869.0,"pop":21456885,"region":"South Asia","income":"Upper-Middle"},{"country":"Sudan","iso3":"SDN","cl":"C1","ppi":49.72,"life_exp":64.7,"gdp":971.7,"pop":42902526,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Sweden","iso3":"SWE","cl":"C2","ppi":16.26,"life_exp":82.47,"gdp":55640.7,"pop":10022459,"region":"Europe & Central Asia","income":"High"},{"country":"Switzerland","iso3":"CHE","cl":"C2","ppi":38.01,"life_exp":83.35,"gdp":88036.6,"pop":8414850,"region":"Europe & Central Asia","income":"High"},{"country":"Syrian Arab Republic","iso3":"SYR","cl":"C4","ppi":56.31,"life_exp":68.52,"gdp":1145.6,"pop":21083692,"region":"Middle East & North Africa","income":"Lower-Middle"},{"country":"Tanzania","iso3":"TZA","cl":"C3","ppi":18.89,"life_exp":64.74,"gdp":1022.9,"pop":55832446,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Thailand","iso3":"THA","cl":"C4","ppi":42.61,"life_exp":76.5,"gdp":6439.0,"pop":70828503,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Togo","iso3":"TGO","cl":"C1","ppi":44.86,"life_exp":60.06,"gdp":850.3,"pop":8078288,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Tunisia","iso3":"TUN","cl":"C4","ppi":51.32,"life_exp":75.0,"gdp":3946.1,"pop":11605831,"region":"Middle East & North Africa","income":"Upper-Middle"},{"country":"Turkiye","iso3":"TUR","cl":"C4","ppi":44.65,"life_exp":76.57,"gdp":10994.8,"pop":80181740,"region":"Sub-Saharan Africa","income":"Upper-Middle"},{"country":"Turkmenistan","iso3":"TKM","cl":"C1","ppi":67.97,"life_exp":69.23,"gdp":6009.6,"pop":6514270,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Uganda","iso3":"UGA","cl":"C1","ppi":38.29,"life_exp":64.78,"gdp":848.8,"pop":40525801,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Ukraine","iso3":"UKR","cl":"C4","ppi":52.21,"life_exp":72.59,"gdp":3550.3,"pop":44567803,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"United Arab Emirates","iso3":"ARE","cl":"C2","ppi":69.83,"life_exp":81.84,"gdp":47553.5,"pop":8864570,"region":"Middle East & North Africa","income":"High"},{"country":"United Kingdom","iso3":"GBR","cl":"C2","ppi":54.89,"life_exp":81.03,"gdp":44318.1,"pop":65779523,"region":"Europe & Central Asia","income":"High"},{"country":"United States","iso3":"USA","cl":"C2","ppi":48.64,"life_exp":78.25,"gdp":61722.2,"pop":325245869,"region":"North America","income":"High"},{"country":"Uruguay","iso3":"URY","cl":"C4","ppi":44.95,"life_exp":77.17,"gdp":18185.6,"pop":3374310,"region":"Latin America & Caribbean","income":"High"},{"country":"Uzbekistan","iso3":"UZB","cl":"C4","ppi":61.12,"life_exp":71.43,"gdp":2371.4,"pop":31972674,"region":"Europe & Central Asia","income":"Upper-Middle"},{"country":"Venezuela, RB","iso3":"VEN","cl":"C4","ppi":29.6,"life_exp":72.57,"gdp":5153.7,"pop":29442445,"region":"Latin America & Caribbean","income":"Upper-Middle"},{"country":"Viet Nam","iso3":"VNM","cl":"C4","ppi":37.25,"life_exp":74.16,"gdp":3052.6,"pop":94822302,"region":"East Asia & Pacific","income":"Upper-Middle"},{"country":"Yemen, Rep.","iso3":"YEM","cl":"C1","ppi":53.49,"life_exp":67.24,"gdp":1127.9,"pop":33230805,"region":"Middle East & North Africa","income":"Lower-Middle"},{"country":"Zambia","iso3":"ZMB","cl":"C3","ppi":15.44,"life_exp":61.69,"gdp":1420.1,"pop":17494452,"region":"Sub-Saharan Africa","income":"Lower-Middle"},{"country":"Zimbabwe","iso3":"ZWE","cl":"C3","ppi":20.12,"life_exp":59.39,"gdp":1931.8,"pop":14883543,"region":"Sub-Saharan Africa","income":"Lower-Middle"}]};
+
+const canvas = document.getElementById('chart-canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const W = () => canvas.parentElement.clientWidth;
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+let currentDecade = '1990–2000';
+let animTimer = null;
+let animProgress = 0;
+let animFrom = null, animTo = null;
+let animDuration = 1200;
+let isPlaying = false;
+let currentData = [];
+
+const PAD = {top:40, right:30, bottom:55, left:62};
+
+function resize() {
+  const w = W();
+  const h = Math.min(Math.round(w * 0.62), 520);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = w * DPR;
+  canvas.height = h * DPR;
+  ctx.scale(DPR, DPR);
+  draw(currentData);
+}
+
+function getPlotDims() {
+  const w = parseInt(canvas.style.width) || W();
+  const h = parseInt(canvas.style.height) || 400;
+  return {
+    pw: w - PAD.left - PAD.right,
+    ph: h - PAD.top - PAD.bottom,
+    ox: PAD.left, oy: PAD.top, w, h
+  };
+}
+
+function xScale(ppi, dims) { return dims.ox + (ppi / 105) * dims.pw; }
+function yScale(life, dims) {
+  const mn = 35, mx = 90;
+  return dims.oy + dims.ph - ((life - mn) / (mx - mn)) * dims.ph;
+}
+function popRadius(pop) {
+  const r = Math.sqrt(pop / 1e6) * 1.4;
+  return Math.max(3, Math.min(r, 36));
+}
+
+function draw(data, alpha=1) {
+  const dims = getPlotDims();
+  const {pw,ph,ox,oy,w,h} = dims;
+  ctx.clearRect(0,0,w,h);
+
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const axisColor = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)';
+  const textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+  const quadColor = isDark ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.018)';
+
+  ctx.font = '11px system-ui,sans-serif';
+
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.016)';
+  ctx.fillRect(ox + xScale(50,dims) - ox, oy, pw - (xScale(50,dims)-ox), ph);
+
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5;
+  [0,20,40,60,80,100].forEach(v => {
+    const x = xScale(v, dims);
+    ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy+ph); ctx.stroke();
+    ctx.fillStyle = textColor; ctx.textAlign = 'center';
+    ctx.fillText(v, x, oy+ph+16);
+  });
+  [40,50,60,70,80,90].forEach(v => {
+    const y = yScale(v, dims);
+    ctx.beginPath(); ctx.moveTo(ox, y); ctx.lineTo(ox+pw, y); ctx.stroke();
+    ctx.fillStyle = textColor; ctx.textAlign = 'right';
+    ctx.fillText(v, ox-8, y+4);
+  });
+
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(ox, oy, pw, ph);
+
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)';
+  ctx.setLineDash([5,4]);
+  ctx.lineWidth = 1;
+  const mx = xScale(50, dims);
+  ctx.beginPath(); ctx.moveTo(mx, oy); ctx.lineTo(mx, oy+ph); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+  ctx.font = 'bold 11px system-ui,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Planetary Pressure Index (0–100)', ox + pw/2, oy+ph+38);
+  ctx.save();
+  ctx.translate(14, oy + ph/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Life Expectancy at Birth (years)', 0, 0);
+  ctx.restore();
+
+  ctx.font = '500 13px system-ui,sans-serif';
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.32)';
+  ctx.textAlign = 'center';
+  ctx.fillText('← Lower pressure', ox + pw*0.22, oy+ph+30);
+  ctx.fillText('Higher pressure →', ox + pw*0.78, oy+ph+30);
+
+  ctx.font = '500 14px system-ui,sans-serif';
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)';
+  ctx.textAlign = 'right';
+  ctx.fillText(currentDecade, ox+pw-4, oy+18);
+
+  const sorted = [...data].sort((a,b)=>b.pop - a.pop);
+
+  sorted.forEach(d => {
+    const x = xScale(d.ppi, dims);
+    const y = yScale(d.life_exp, dims);
+    const r = popRadius(d.pop);
+    const col = CLUSTER_COLORS[d.cl];
+    ctx.globalAlpha = alpha * 0.78;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = r > 14 ? 1.5 : 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.font = '600 11px system-ui,sans-serif';
+  sorted.filter(d => NOTABLE.includes(d.country)).forEach(d => {
+    const x = xScale(d.ppi, dims);
+    const y = yScale(d.life_exp, dims);
+    const r = popRadius(d.pop);
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.75)';
+    ctx.textAlign = 'left';
+    let lx = x + r + 3, ly = y - 3;
+    if (x + r + 50 > ox+pw) { lx = x - r - 2; ctx.textAlign = 'right'; }
+    ctx.fillText(d.country, lx, ly);
+  });
+}
+
+function updateStats(data) {
+  const n = data.length;
+  const ppis = data.map(d=>d.ppi).sort((a,b)=>a-b);
+  const lifes = data.map(d=>d.life_exp).sort((a,b)=>a-b);
+  const medPpi = ppis[Math.floor(n/2)].toFixed(1);
+  const medLife = lifes[Math.floor(n/2)].toFixed(1);
+  const c4n = data.filter(d=>d.cl==='C4').length;
+  document.getElementById('s-n').textContent = n;
+  document.getElementById('s-medppi').textContent = medPpi;
+  document.getElementById('s-medlife').textContent = medLife + ' yrs';
+  document.getElementById('s-c4').textContent = c4n + ' countries';
+}
+
+function switchDecade(d, animate=false) {
+  const prev = currentData;
+  currentDecade = d;
+  currentData = RAW[d] || [];
+  document.querySelectorAll('#decade-tabs .btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.decade === d);
+  });
+  updateStats(currentData);
+  if (animate && prev.length > 0) {
+    animateTransition(prev, currentData);
+  } else {
+    draw(currentData);
+  }
+}
+
+function animateTransition(from, to) {
+  cancelAnimationFrame(animTimer);
+  const fromMap = {};
+  from.forEach(d => fromMap[d.iso3] = d);
+  const toMap = {};
+  to.forEach(d => toMap[d.iso3] = d);
+
+  const startTime = performance.now();
+  function frame(now) {
+    const t = Math.min((now - startTime) / animDuration, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+
+    const dims = getPlotDims();
+    const {pw,ph,ox,oy,w,h} = dims;
+    ctx.clearRect(0,0,w,h);
+
+    const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+    const axisColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+
+    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5;
+    [0,20,40,60,80,100].forEach(v => {
+      const x = xScale(v, dims);
+      ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy+ph); ctx.stroke();
+      ctx.fillStyle = textColor; ctx.textAlign = 'center'; ctx.font = '11px system-ui,sans-serif';
+      ctx.fillText(v, x, oy+ph+16);
+    });
+    [40,50,60,70,80,90].forEach(v => {
+      const y2 = yScale(v, dims);
+      ctx.beginPath(); ctx.moveTo(ox, y2); ctx.lineTo(ox+pw, y2); ctx.stroke();
+      ctx.fillStyle = textColor; ctx.textAlign = 'right'; ctx.font = '11px system-ui,sans-serif';
+      ctx.fillText(v, ox-8, y2+4);
+    });
+    ctx.strokeStyle = axisColor; ctx.lineWidth = 1;
+    ctx.strokeRect(ox, oy, pw, ph);
+
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)';
+    ctx.setLineDash([5,4]); ctx.lineWidth = 1;
+    const mx = xScale(50, dims);
+    ctx.beginPath(); ctx.moveTo(mx, oy); ctx.lineTo(mx, oy+ph); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+    ctx.font = 'bold 11px system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Planetary Pressure Index (0–100)', ox + pw/2, oy+ph+38);
+    ctx.save(); ctx.translate(14, oy + ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Life Expectancy at Birth (years)', 0, 0); ctx.restore();
+
+    ctx.font = '500 14px system-ui,sans-serif';
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)';
+    ctx.textAlign = 'right';
+    ctx.fillText(currentDecade, ox+pw-4, oy+18);
+
+    const merged = {};
+    to.forEach(d => {
+      const f = fromMap[d.iso3];
+      if (f) {
+        merged[d.iso3] = {
+          country: d.country, iso3: d.iso3,
+          cl: ease > 0.5 ? d.cl : f.cl,
+          ppi: f.ppi + (d.ppi - f.ppi) * ease,
+          life_exp: f.life_exp + (d.life_exp - f.life_exp) * ease,
+          pop: f.pop + (d.pop - f.pop) * ease,
+          region: d.region, income: d.income, gdp: d.gdp
+        };
+      } else {
+        merged[d.iso3] = {...d, _alpha: ease};
+      }
+    });
+    from.forEach(d => {
+      if (!toMap[d.iso3]) {
+        merged[d.iso3] = {...d, _alpha: 1 - ease};
+      }
+    });
+
+    const sorted = Object.values(merged).sort((a,b)=>b.pop - a.pop);
+    sorted.forEach(d => {
+      const x = xScale(d.ppi, dims);
+      const y2 = yScale(d.life_exp, dims);
+      const r = popRadius(d.pop);
+      const col = CLUSTER_COLORS[d.cl];
+      const a = d._alpha !== undefined ? d._alpha : 1;
+      ctx.globalAlpha = a * 0.78;
+      ctx.beginPath(); ctx.arc(x, y2, r, 0, Math.PI*2);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.globalAlpha = a;
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = r > 14 ? 1.5 : 0.8;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+
+    if (t < 1) { animTimer = requestAnimationFrame(frame); }
+    else { draw(currentData); }
+  }
+  animTimer = requestAnimationFrame(frame);
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('playBtn');
+  if (isPlaying) {
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('active');
+    playNext();
+  } else {
+    btn.textContent = '▶ Animate';
+    btn.classList.remove('active');
+  }
+}
+
+function playNext() {
+  if (!isPlaying) return;
+  const idx = DECADES.indexOf(currentDecade);
+  const next = DECADES[(idx + 1) % DECADES.length];
+  switchDecade(next, true);
+  const delay = animDuration + 1800;
+  setTimeout(() => { if (isPlaying) playNext(); }, delay);
+}
+
+function updateSpeed(v) {
+  document.getElementById('speedLabel').textContent = v + '×';
+  animDuration = Math.round(2400 / v);
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const dims = getPlotDims();
+  let best = null, bestDist = 28;
+  currentData.forEach(d => {
+    const x = xScale(d.ppi, dims);
+    const y = yScale(d.life_exp, dims);
+    const dist = Math.hypot(mx-x, my-y);
+    if (dist < Math.max(popRadius(d.pop) + 4, bestDist)) { best = d; bestDist = dist; }
+  });
+  if (best) {
+    tooltip.style.display = 'block';
+    let tx = e.clientX - rect.left + 14;
+    let ty = e.clientY - rect.top - 10;
+    if (tx + 185 > parseInt(canvas.style.width)) tx = e.clientX - rect.left - 190;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+    const col = CLUSTER_COLORS[best.cl];
+    tooltip.innerHTML = `<b>${best.country}</b> (${best.iso3})<br>
+      <span style="color:${col};font-weight:500">${best.cl}: ${CLUSTER_LABELS[best.cl]}</span><br>
+      PPI: <b>${best.ppi.toFixed(1)}</b> &nbsp; Life exp: <b>${best.life_exp.toFixed(1)} yrs</b><br>
+      GDP/cap: <b>$${Math.round(best.gdp).toLocaleString()}</b><br>
+      Population: <b>${(best.pop/1e6).toFixed(1)}M</b><br>
+      Region: ${best.region}`;
+  } else {
+    tooltip.style.display = 'none';
+  }
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
+switchDecade('1990–2000');
+resize();
+window.addEventListener('resize', resize);
+</script>
