@@ -39,11 +39,17 @@ See [`data/README.md`](data/README.md) for files, variables and provenance.
 
 *Cluster centres. GDP per capita is the exponential of the mean log value.*
 
+![Clusters by period](figures/fig3_clusters_by_period.png)
+
 - **Development and pressure rise together.** In every period, a higher PPI goes with higher income, longer life expectancy, lower infant mortality and more urbanisation (all p < 0.05). The association weakens over time; the correlation with life expectancy, for example, falls from 0.40 in 1990–2000 to 0.25 in 2011–2023.
 - **Female labour-force participation runs the other way.** It is consistently lower where the PPI is higher (r ≈ −0.34 to −0.37). The PPI has no association with unemployment.
 - **Countries move up, and pressure follows.** About 70% of countries stay in the same cluster from one period to the next. Almost every move is upward (48 of 49 moves from the 1990s to the 2000s, and all 53 from the 2000s to 2011–2023). The step from C2 to C3, the most common move from lower- to higher-pressure development, happened 36 times.
-- **Global average pressure is roughly flat.** The mean PPI is 35.2, 35.0 and 35.6 across the three periods. Rising pressure in developing countries is offset elsewhere.
+- **Global average pressure is roughly flat.** The mean PPI is 35.2, 35.0 and 35.6 across the three periods.
 - **Silhouette is about 0.25 at K = 4.** The clusters overlap, so they should be read as a typology rather than sharply separated groups.
+
+| Transitions between periods | PPI and development outcomes |
+|---|---|
+| ![Transition matrices](figures/fig4_transitions.png) | ![Correlations with the PPI](figures/fig5_ppi_correlations.png) |
 
 All tables are in [`results/`](results/): the workbook `thesis_results.xlsx`, plus one CSV per table in `results/csv/`.
 
