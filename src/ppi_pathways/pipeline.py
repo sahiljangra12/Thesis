@@ -107,9 +107,11 @@ def build_tables(res: Results) -> dict[str, pd.DataFrame]:
 
 def write_outputs(res: Results) -> None:
     config.RESULTS_DIR.mkdir(exist_ok=True)
-    with pd.ExcelWriter(config.RESULTS_DIR / "thesis_results.xlsx") as xl:
+    workbook = config.RESULTS_DIR / "thesis_results.xlsx"
+    with pd.ExcelWriter(workbook) as xl:
         for name, table in res.tables.items():
             table.to_excel(xl, sheet_name=name[:31], index=False)
+    _normalise_xlsx(workbook)
     csv_dir = config.RESULTS_DIR / "csv"
     csv_dir.mkdir(exist_ok=True)
     for name, table in res.tables.items():
@@ -124,6 +126,22 @@ def write_outputs(res: Results) -> None:
     figures.regression_dots(res.regressions, f / "fig5_ppi_correlations.png")
 
     write_animation_data(res, labels)
+
+
+def _normalise_xlsx(path) -> None:
+    """Remove save timestamps so identical results give a byte-identical workbook."""
+    import re
+    import zipfile
+
+    fixed = (2026, 1, 1, 0, 0, 0)
+    with zipfile.ZipFile(path) as src:
+        entries = [(info.filename, src.read(info.filename)) for info in src.infolist()]
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as dst:
+        for name, payload in entries:
+            if name == "docProps/core.xml":
+                payload = re.sub(rb"(<dcterms:(?:created|modified)[^>]*>)[^<]*",
+                                 rb"\g<1>2026-01-01T00:00:00Z", payload)
+            dst.writestr(zipfile.ZipInfo(name, fixed), payload, zipfile.ZIP_DEFLATED)
 
 
 def write_animation_data(res: Results, labels: dict[str, str]) -> None:
