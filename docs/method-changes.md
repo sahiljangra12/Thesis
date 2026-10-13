@@ -1,6 +1,6 @@
 # Method changes: v1.0 (as submitted) → v2.0
 
-Version 1.0 is the analysis as submitted in 2026, preserved under the tag `v1.0-submitted`. Version 2.0 fixes the problems below. Each fix is covered by a test in `tests/test_pipeline.py`, so the problem cannot come back unnoticed.
+Version 1.0 is the analysis as submitted in 2026, preserved on the branch `v1.0-submitted`. Version 2.0 fixes the problems below. Each fix is covered by a test in `tests/test_pipeline.py`, so the problem cannot come back unnoticed.
 
 ## 1. Sample
 

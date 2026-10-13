@@ -18,6 +18,6 @@ The analysis was corrected and turned into a tested package. The details and bef
 - Results as CSV files alongside the workbook, so changes show up line by line in git diffs
 - Data documentation (`data/README.md`) and a sovereign-state reference list
 
-## 1.0.0: as submitted (tag `v1.0-submitted`)
+## 1.0.0: as submitted (branch `v1.0-submitted`)
 
 The analysis notebook and results as submitted, with the repository reorganised into folders.
