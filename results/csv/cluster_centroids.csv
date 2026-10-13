@@ -1,0 +1,5 @@
+cluster,label,ppi,log_gdp_pc,life_expectancy,infant_mortality,urban_population_pct
+C1,"Low development, lower pressure",30.3730,6.2100,53.1560,87.2020,31.2250
+C2,"Lower-middle development, lower pressure",26.9720,7.1320,64.7730,40.4610,36.3960
+C3,"Upper-middle development, higher pressure",36.8380,8.2920,71.4160,19.5720,60.4460
+C4,"High development, higher pressure",44.3120,10.1250,78.2760,6.4370,80.6270

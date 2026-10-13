@@ -1,0 +1,182 @@
+iso3,country,1990–2000,2001–2010,2011–2023
+AFG,Afghanistan,C1,C1,C1
+AGO,Angola,C1,C1,C2
+ALB,Albania,C2,C3,C3
+ARE,United Arab Emirates,C4,C4,C4
+ARG,Argentina,C4,C4,C4
+ARM,Armenia,C3,C3,C3
+AUS,Australia,C4,C4,C4
+AUT,Austria,C4,C4,C4
+AZE,Azerbaijan,C1,C3,C3
+BDI,Burundi,C1,C1,C2
+BEL,Belgium,C4,C4,C4
+BEN,Benin,C1,C1,C2
+BFA,Burkina Faso,C1,C1,C2
+BGD,Bangladesh,C1,C2,C3
+BGR,Bulgaria,C3,C3,C4
+BHR,Bahrain,C4,C4,C4
+BHS,"Bahamas, The",C3,C4,C4
+BIH,Bosnia and Herzegovina,C2,C3,C3
+BLR,Belarus,C3,C3,C3
+BLZ,Belize,C2,C3,C3
+BOL,Bolivia,C1,C2,C3
+BRA,Brazil,C3,C3,C3
+BRB,Barbados,C3,C3,C4
+BRN,Brunei Darussalam,C4,C4,C4
+BTN,Bhutan,C1,C2,C2
+BWA,Botswana,C2,C2,C3
+CAF,Central African Republic,C1,C1,C1
+CAN,Canada,C4,C4,C4
+CHE,Switzerland,C4,C4,C4
+CHL,Chile,C3,C4,C4
+CHN,China,C2,C3,C4
+CIV,Cote d'Ivoire,C1,C1,C2
+CMR,Cameroon,C1,C1,C2
+COD,"Congo, Dem. Rep.",C1,C1,C2
+COG,"Congo, Rep.",C1,C2,C2
+COL,Colombia,C3,C3,C3
+COM,Comoros,C1,C2,C2
+CPV,Cabo Verde,C2,C3,C3
+CRI,Costa Rica,C3,C3,C4
+CUB,Cuba,C3,C3,C4
+CYP,Cyprus,C4,C4,C4
+CZE,Czechia,C3,C4,C4
+DEU,Germany,C4,C4,C4
+DJI,Djibouti,C1,C1,C3
+DNK,Denmark,C4,C4,C4
+DOM,Dominican Republic,C3,C3,C3
+DZA,Algeria,C3,C3,C3
+ECU,Ecuador,C3,C3,C3
+EGY,"Egypt, Arab Rep.",C2,C3,C3
+ERI,Eritrea,C1,C2,C2
+ESP,Spain,C4,C4,C4
+EST,Estonia,C3,C3,C4
+ETH,Ethiopia,C1,C1,C2
+FIN,Finland,C4,C4,C4
+FJI,Fiji,C2,C2,C3
+FRA,France,C4,C4,C4
+FSM,"Micronesia, Fed. Sts.",C2,C2,C2
+GAB,Gabon,C2,C3,C3
+GBR,United Kingdom,C4,C4,C4
+GEO,Georgia,C2,C3,C3
+GHA,Ghana,C1,C2,C3
+GIN,Guinea,C1,C1,C1
+GMB,"Gambia, The",C1,C2,C3
+GNB,Guinea-Bissau,C1,C1,C2
+GNQ,Equatorial Guinea,C1,C1,C2
+GRC,Greece,C4,C4,C4
+GRD,Grenada,C3,C3,C3
+GTM,Guatemala,C2,C2,C3
+GUY,Guyana,C2,C2,C2
+HND,Honduras,C2,C2,C3
+HRV,Croatia,C3,C3,C3
+HTI,Haiti,C1,C2,C2
+HUN,Hungary,C3,C4,C4
+IDN,Indonesia,C2,C2,C3
+IND,India,C1,C2,C3
+IRL,Ireland,C4,C4,C4
+IRN,"Iran, Islamic Rep.",C3,C3,C3
+IRQ,Iraq,C3,C3,C3
+ISL,Iceland,C4,C4,C4
+ISR,Israel,C4,C4,C4
+ITA,Italy,C4,C4,C4
+JAM,Jamaica,C3,C3,C3
+JOR,Jordan,C3,C3,C4
+JPN,Japan,C4,C4,C4
+KAZ,Kazakhstan,C3,C3,C3
+KEN,Kenya,C1,C2,C2
+KGZ,Kyrgyz Republic,C2,C2,C3
+KHM,Cambodia,C1,C2,C2
+KIR,Kiribati,C2,C2,C2
+KOR,"Korea, Rep.",C4,C4,C4
+KWT,Kuwait,C4,C4,C4
+LAO,Lao PDR,C1,C2,C2
+LBN,Lebanon,C3,C4,C4
+LBR,Liberia,C1,C1,C2
+LBY,Libya,C3,C4,C4
+LCA,St. Lucia,C3,C2,C3
+LKA,Sri Lanka,C2,C2,C2
+LSO,Lesotho,C1,C1,C1
+LTU,Lithuania,C3,C3,C4
+LUX,Luxembourg,C4,C4,C4
+LVA,Latvia,C3,C3,C3
+MAR,Morocco,C2,C3,C3
+MDA,Moldova,C3,C3,C3
+MDG,Madagascar,C1,C2,C2
+MDV,Maldives,C2,C3,C3
+MEX,Mexico,C3,C3,C4
+MKD,North Macedonia,C3,C3,C3
+MLI,Mali,C1,C1,C1
+MLT,Malta,C4,C4,C4
+MMR,Myanmar,C1,C2,C2
+MNE,Montenegro,,C3,C3
+MNG,Mongolia,C2,C3,C3
+MOZ,Mozambique,C1,C1,C2
+MRT,Mauritania,C1,C2,C3
+MUS,Mauritius,C3,C3,C3
+MWI,Malawi,C1,C1,C2
+MYS,Malaysia,C3,C4,C4
+NAM,Namibia,C2,C2,C2
+NER,Niger,C1,C1,C1
+NGA,Nigeria,C1,C1,C1
+NIC,Nicaragua,C2,C3,C3
+NLD,Netherlands,C4,C4,C4
+NOR,Norway,C4,C4,C4
+NPL,Nepal,C1,C2,C3
+NZL,New Zealand,C4,C4,C4
+OMN,Oman,C3,C4,C4
+PAK,Pakistan,C1,C1,C2
+PAN,Panama,C3,C3,C3
+PER,Peru,C3,C3,C3
+PHL,Philippines,C2,C2,C3
+PNG,Papua New Guinea,C2,C2,C2
+POL,Poland,C3,C3,C4
+PRT,Portugal,C3,C4,C4
+PRY,Paraguay,C2,C3,C3
+PSE,West Bank and Gaza,C3,C3,C4
+QAT,Qatar,C4,C4,C4
+ROU,Romania,C3,C3,C3
+RUS,Russian Federation,C3,C3,C3
+RWA,Rwanda,C1,C1,C2
+SAU,Saudi Arabia,C4,C4,C4
+SDN,Sudan,,,C2
+SEN,Senegal,C1,C2,C2
+SGP,Singapore,C4,C4,C4
+SLB,Solomon Islands,C2,C2,C2
+SLE,Sierra Leone,C1,C1,C1
+SLV,El Salvador,C2,C3,C3
+SOM,"Somalia, Fed. Rep.",C1,C1,C1
+SRB,Serbia,,C3,C3
+SSD,South Sudan,,,C1
+STP,Sao Tome and Principe,C2,C2,C3
+SUR,Suriname,C2,C3,C3
+SVK,Slovak Republic,C3,C3,C3
+SVN,Slovenia,C3,C3,C4
+SWE,Sweden,C4,C4,C4
+SWZ,Eswatini,C1,C1,C2
+SYR,Syrian Arab Republic,C3,C3,C3
+TCD,Chad,C1,C1,C1
+TGO,Togo,C1,C1,C2
+THA,Thailand,C2,C3,C3
+TJK,Tajikistan,C1,C2,C2
+TKM,Turkmenistan,C2,C3,C3
+TLS,Timor-Leste,,C2,C2
+TON,Tonga,C2,C2,C3
+TTO,Trinidad and Tobago,C3,C3,C3
+TUN,Tunisia,C3,C3,C3
+TUR,Turkiye,C3,C3,C4
+TZA,Tanzania,C1,C1,C2
+UGA,Uganda,C1,C1,C2
+UKR,Ukraine,C3,C3,C3
+URY,Uruguay,C4,C4,C4
+USA,United States,C4,C4,C4
+UZB,Uzbekistan,C2,C3,C3
+VCT,St. Vincent and the Grenadines,C3,C3,C3
+VEN,"Venezuela, RB",C3,C3,C3
+VNM,Viet Nam,C2,C2,C3
+VUT,Vanuatu,C2,C2,C2
+WSM,Samoa,C2,C2,C2
+YEM,"Yemen, Rep.",C1,C2,C2
+ZAF,South Africa,C3,C3,C3
+ZMB,Zambia,C1,C1,C2
+ZWE,Zimbabwe,C1,C1,C2

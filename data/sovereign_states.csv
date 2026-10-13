@@ -1,0 +1,195 @@
+iso3,country,status
+AFG,Afghanistan,UN member state
+ALB,Albania,UN member state
+DZA,Algeria,UN member state
+AND,Andorra,UN member state
+AGO,Angola,UN member state
+ATG,Antigua and Barbuda,UN member state
+ARG,Argentina,UN member state
+ARM,Armenia,UN member state
+AUS,Australia,UN member state
+AUT,Austria,UN member state
+AZE,Azerbaijan,UN member state
+BHS,"Bahamas, The",UN member state
+BHR,Bahrain,UN member state
+BGD,Bangladesh,UN member state
+BRB,Barbados,UN member state
+BLR,Belarus,UN member state
+BEL,Belgium,UN member state
+BLZ,Belize,UN member state
+BEN,Benin,UN member state
+BTN,Bhutan,UN member state
+BOL,Bolivia,UN member state
+BIH,Bosnia and Herzegovina,UN member state
+BWA,Botswana,UN member state
+BRA,Brazil,UN member state
+BRN,Brunei Darussalam,UN member state
+BGR,Bulgaria,UN member state
+BFA,Burkina Faso,UN member state
+BDI,Burundi,UN member state
+CPV,Cabo Verde,UN member state
+KHM,Cambodia,UN member state
+CMR,Cameroon,UN member state
+CAN,Canada,UN member state
+CAF,Central African Republic,UN member state
+TCD,Chad,UN member state
+CHL,Chile,UN member state
+CHN,China,UN member state
+COL,Colombia,UN member state
+COM,Comoros,UN member state
+COG,"Congo, Rep.",UN member state
+COD,"Congo, Dem. Rep.",UN member state
+CRI,Costa Rica,UN member state
+CIV,Cote d'Ivoire,UN member state
+HRV,Croatia,UN member state
+CUB,Cuba,UN member state
+CYP,Cyprus,UN member state
+CZE,Czechia,UN member state
+PRK,"Korea, Dem. People's Rep.",UN member state
+DNK,Denmark,UN member state
+DJI,Djibouti,UN member state
+DMA,Dominica,UN member state
+DOM,Dominican Republic,UN member state
+ECU,Ecuador,UN member state
+EGY,"Egypt, Arab Rep.",UN member state
+SLV,El Salvador,UN member state
+GNQ,Equatorial Guinea,UN member state
+ERI,Eritrea,UN member state
+EST,Estonia,UN member state
+SWZ,Eswatini,UN member state
+ETH,Ethiopia,UN member state
+FJI,Fiji,UN member state
+FIN,Finland,UN member state
+FRA,France,UN member state
+GAB,Gabon,UN member state
+GMB,"Gambia, The",UN member state
+GEO,Georgia,UN member state
+DEU,Germany,UN member state
+GHA,Ghana,UN member state
+GRC,Greece,UN member state
+GRD,Grenada,UN member state
+GTM,Guatemala,UN member state
+GIN,Guinea,UN member state
+GNB,Guinea-Bissau,UN member state
+GUY,Guyana,UN member state
+HTI,Haiti,UN member state
+HND,Honduras,UN member state
+HUN,Hungary,UN member state
+ISL,Iceland,UN member state
+IND,India,UN member state
+IDN,Indonesia,UN member state
+IRN,"Iran, Islamic Rep.",UN member state
+IRQ,Iraq,UN member state
+IRL,Ireland,UN member state
+ISR,Israel,UN member state
+ITA,Italy,UN member state
+JAM,Jamaica,UN member state
+JPN,Japan,UN member state
+JOR,Jordan,UN member state
+KAZ,Kazakhstan,UN member state
+KEN,Kenya,UN member state
+KIR,Kiribati,UN member state
+KWT,Kuwait,UN member state
+KGZ,Kyrgyz Republic,UN member state
+LAO,Lao PDR,UN member state
+LVA,Latvia,UN member state
+LBN,Lebanon,UN member state
+LSO,Lesotho,UN member state
+LBR,Liberia,UN member state
+LBY,Libya,UN member state
+LIE,Liechtenstein,UN member state
+LTU,Lithuania,UN member state
+LUX,Luxembourg,UN member state
+MDG,Madagascar,UN member state
+MWI,Malawi,UN member state
+MYS,Malaysia,UN member state
+MDV,Maldives,UN member state
+MLI,Mali,UN member state
+MLT,Malta,UN member state
+MHL,Marshall Islands,UN member state
+MRT,Mauritania,UN member state
+MUS,Mauritius,UN member state
+MEX,Mexico,UN member state
+FSM,"Micronesia, Fed. Sts.",UN member state
+MDA,Moldova,UN member state
+MCO,Monaco,UN member state
+MNG,Mongolia,UN member state
+MNE,Montenegro,UN member state
+MAR,Morocco,UN member state
+MOZ,Mozambique,UN member state
+MMR,Myanmar,UN member state
+NAM,Namibia,UN member state
+NRU,Nauru,UN member state
+NPL,Nepal,UN member state
+NLD,Netherlands,UN member state
+NZL,New Zealand,UN member state
+NIC,Nicaragua,UN member state
+NER,Niger,UN member state
+NGA,Nigeria,UN member state
+MKD,North Macedonia,UN member state
+NOR,Norway,UN member state
+OMN,Oman,UN member state
+PAK,Pakistan,UN member state
+PLW,Palau,UN member state
+PAN,Panama,UN member state
+PNG,Papua New Guinea,UN member state
+PRY,Paraguay,UN member state
+PER,Peru,UN member state
+PHL,Philippines,UN member state
+POL,Poland,UN member state
+PRT,Portugal,UN member state
+QAT,Qatar,UN member state
+KOR,"Korea, Rep.",UN member state
+ROU,Romania,UN member state
+RUS,Russian Federation,UN member state
+RWA,Rwanda,UN member state
+KNA,St. Kitts and Nevis,UN member state
+LCA,St. Lucia,UN member state
+VCT,St. Vincent and the Grenadines,UN member state
+WSM,Samoa,UN member state
+SMR,San Marino,UN member state
+STP,Sao Tome and Principe,UN member state
+SAU,Saudi Arabia,UN member state
+SEN,Senegal,UN member state
+SRB,Serbia,UN member state
+SYC,Seychelles,UN member state
+SLE,Sierra Leone,UN member state
+SGP,Singapore,UN member state
+SVK,Slovak Republic,UN member state
+SVN,Slovenia,UN member state
+SLB,Solomon Islands,UN member state
+SOM,"Somalia, Fed. Rep.",UN member state
+ZAF,South Africa,UN member state
+SSD,South Sudan,UN member state
+ESP,Spain,UN member state
+LKA,Sri Lanka,UN member state
+SDN,Sudan,UN member state
+SUR,Suriname,UN member state
+SWE,Sweden,UN member state
+CHE,Switzerland,UN member state
+SYR,Syrian Arab Republic,UN member state
+TJK,Tajikistan,UN member state
+TZA,Tanzania,UN member state
+THA,Thailand,UN member state
+TLS,Timor-Leste,UN member state
+TGO,Togo,UN member state
+TON,Tonga,UN member state
+TTO,Trinidad and Tobago,UN member state
+TUN,Tunisia,UN member state
+TUR,Turkiye,UN member state
+TKM,Turkmenistan,UN member state
+TUV,Tuvalu,UN member state
+UGA,Uganda,UN member state
+UKR,Ukraine,UN member state
+ARE,United Arab Emirates,UN member state
+GBR,United Kingdom,UN member state
+USA,United States,UN member state
+URY,Uruguay,UN member state
+UZB,Uzbekistan,UN member state
+VUT,Vanuatu,UN member state
+VEN,"Venezuela, RB",UN member state
+VNM,Viet Nam,UN member state
+YEM,"Yemen, Rep.",UN member state
+ZMB,Zambia,UN member state
+ZWE,Zimbabwe,UN member state
+PSE,West Bank and Gaza,UN non-member observer state

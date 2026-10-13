@@ -1,57 +1,66 @@
 # Planetary Boundary Transgressions and Divergent Socio-Economic Pathways
 
-**A cross-national quantitative analysis of environmental pressure and development, 1990–2023**
+**A cross-national quantitative analysis of planetary pressure and development, 1990–2023**
+
+[![CI](https://github.com/sahiljangra12/Thesis/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiljangra12/Thesis/actions/workflows/ci.yml)
 
 Undergraduate thesis · BSc Analytics and Sustainability Studies · Tata Institute of Social Sciences, Mumbai (2026)
 Author: Sahil · Supervisor: Dr. Kamal Kumar Murari
 
-![Planetary Pressure Index vs life expectancy, 1990–2000](figures/ppi-life-expectancy-1990s.png)
+[![Planetary Pressure Index vs life expectancy, 2011–2023](docs/preview.png)](https://sahiljangra12.github.io/Thesis/)
 
-**[Interactive version →](https://sahiljangra12.github.io/Thesis/)** Step through the three decades and watch countries move.
+**[Open the interactive chart →](https://sahiljangra12.github.io/Thesis/)**
 
 ## Research question
 
-Do countries that put more pressure on planetary boundaries also achieve better socio-economic outcomes? How have countries moved between pressure-and-development pathways over three decades?
+Do countries that place more pressure on planetary boundaries achieve better socio-economic outcomes, and how have countries moved between pressure–development pathways since 1990?
 
 ## Data
 
-The analysis uses a country–year panel of 195 sovereign countries (regional aggregates and countries under 100,000 people removed), covering 1990–2024 with 50 variables. Sources are the World Bank World Development Indicators, FAOSTAT, the WHO Global Health Observatory, ILOSTAT and the UNDP Human Development Report. All are open access.
+The sample is **182 countries**: the 193 UN member states plus the State of Palestine, keeping those with a mean population of at least 100,000. The panel runs from 1990 to 2023, and its indicators come from the World Bank World Development Indicators, FAOSTAT, the WHO Global Health Observatory, ILOSTAT and the UNDP Human Development Report. Years are grouped into three non-overlapping periods: 1990–2000, 2001–2010 and 2011–2023.
 
-Years are grouped into three periods: **D1** 1990–2000, **D2** 2000–2010 and **D3** 2010–2023.
+See [`data/README.md`](data/README.md) for files, variables and provenance.
 
 ## Method
 
-1. **Planetary Pressure Index (PPI).** Six indicators: renewable energy share, forest cover, agricultural land, fertilizer use, PM2.5 exposure and energy use per capita. Renewables and forest cover are sign-reversed so that higher always means more pressure. Each indicator is z-scored globally, the six are averaged (a country needs at least 4 of 6), and the result is rescaled to 0–100 within each decade.
-2. **Clustering.** K-means on PPI, GDP per capita, life expectancy, infant mortality and urbanization. K = 4 was chosen using the elbow method and silhouette scores (0.31–0.33), and clusters were labeled by their position relative to the median PPI and GDP:
-   - C1: high pressure / low development
-   - C2: high pressure / high development
-   - C3: low pressure / low development
-   - C4: transitioning / decoupling
-3. **Transitions.** Matrices showing how countries moved between clusters from D1 to D2 and from D2 to D3.
-4. **Regression.** Bivariate OLS of each socio-economic outcome on PPI, run separately for each decade.
+1. **Planetary Pressure Index (PPI).** Six indicators: renewable energy share and forest cover (both reversed), agricultural land, fertiliser use, PM2.5 exposure and energy use per capita. Each is z-scored over all country-periods, the six are averaged (at least 4 must be present), and the result is rescaled to a single 0–100 scale shared by every period.
+2. **Clusters.** One k-means model (K = 4) is fitted to all country-periods together. It uses PPI, log GDP per capita, life expectancy, infant mortality and urbanisation. Clusters are numbered by development level and named from their centres.
+3. **Transitions.** For each pair of consecutive periods, the analysis counts how many countries moved from one cluster to another. Because the clusters are shared, a move reflects a real change in the country's indicators.
+4. **Associations.** Bivariate OLS of each outcome on the PPI, by period. These describe co-variation, not causal effects.
 
 ## Key results
 
-- Mean PPI rose in every period: 34.9 → 37.6 → 39.9.
-- Higher planetary pressure goes with better development outcomes in every decade: higher life expectancy, lower infant mortality and more urbanization (all p < 0.05). The link weakens over time. For example, the correlation with life expectancy falls from r = 0.40 in the 1990s to 0.25 in 2010–2023.
-- Higher pressure is associated with *lower* female labor-force participation in every decade. PPI has no relationship with unemployment.
-- 91% of countries stayed in the same cluster from the 1990s to the 2000s.
+| Cluster | Description | PPI | Life expectancy | GDP per capita |
+|---|---|---|---|---|
+| C1 | Low development, lower pressure | 30 | 53 yrs | ~$500 |
+| C2 | Lower-middle development, lower pressure | 27 | 65 yrs | ~$1,250 |
+| C3 | Upper-middle development, higher pressure | 37 | 71 yrs | ~$4,000 |
+| C4 | High development, higher pressure | 44 | 78 yrs | ~$25,000 |
 
-Full tables are in [`results/thesis_results.xlsx`](results/thesis_results.xlsx).
+*Cluster centres. GDP per capita is the exponential of the mean log value.*
+
+- **Development and pressure rise together.** In every period, a higher PPI goes with higher income, longer life expectancy, lower infant mortality and more urbanisation (all p < 0.05). The association weakens over time; the correlation with life expectancy, for example, falls from 0.40 in 1990–2000 to 0.25 in 2011–2023.
+- **Female labour-force participation runs the other way.** It is consistently lower where the PPI is higher (r ≈ −0.34 to −0.37). The PPI has no association with unemployment.
+- **Countries move up, and pressure follows.** About 70% of countries stay in the same cluster from one period to the next. Almost every move is upward (48 of 49 moves from the 1990s to the 2000s, and all 53 from the 2000s to 2011–2023). The step from C2 to C3, the most common move from lower- to higher-pressure development, happened 36 times.
+- **Global average pressure is roughly flat.** The mean PPI is 35.2, 35.0 and 35.6 across the three periods. Rising pressure in developing countries is offset elsewhere.
+- **Silhouette is about 0.25 at K = 4.** The clusters overlap, so they should be read as a typology rather than sharply separated groups.
+
+All tables are in [`results/`](results/): the workbook `thesis_results.xlsx`, plus one CSV per table in `results/csv/`.
+
+## Changes from the submitted version
+
+Version 2.0 corrects several problems in the analysis that was submitted in 2026. These include aggregates and territories that had entered the sample, a per-period PPI scale, and clusters that were fitted separately for each period. The submitted version is preserved under the tag [`v1.0-submitted`](https://github.com/sahiljangra12/Thesis/tree/v1.0-submitted). What changed and why is documented in [`docs/method-changes.md`](docs/method-changes.md).
 
 ## Repository structure
 
 ```
-data/
-  thesis_dataset.xlsx      Analysis panel (Data sheet) and variable dictionary (Legend sheet)
-  data_sources.xlsx        Source links, indicator mapping and master database
-notebooks/
-  thesis_analysis.ipynb    Full analysis, from raw panel to tables and figures
-results/
-  thesis_results.xlsx      Descriptive statistics, cluster profiles, assignments, regressions, transitions
-figures/                   Figures written by the notebook
-docs/
-  index.html               Interactive animation (served by GitHub Pages)
+src/ppi_pathways/    Analysis package: data, PPI, clustering, regression, figures, pipeline
+notebooks/           thesis_analysis.ipynb: step-by-step walkthrough using the package
+tests/               Checks on the sample, the PPI, the clusters and the regressions
+data/                Input panel, country list, region lookup, source documentation
+results/             Generated tables (xlsx + csv)
+figures/             Generated figures
+docs/                Interactive chart (GitHub Pages) and method notes
 ```
 
 ## Reproducing the analysis
@@ -59,16 +68,16 @@ docs/
 ```bash
 git clone https://github.com/sahiljangra12/Thesis.git
 cd Thesis
-pip install -r requirements.txt
-cd notebooks
-jupyter nbconvert --to notebook --execute --inplace thesis_analysis.ipynb
+pip install -e ".[dev]"
+python -m ppi_pathways        # regenerates results/, figures/ and docs/data/ in a few seconds
+pytest                        # runs the checks
 ```
 
-The notebook runs end to end in under a minute and reproduces the PPI summary, silhouette scores, transition matrices and regression results in `results/thesis_results.xlsx`.
+On every push, continuous integration runs the linter and the tests. It then reruns the whole analysis and fails if any committed result changes.
 
 ## Citation
 
-If you use this work, please cite it using the details in [`CITATION.cff`](CITATION.cff), or use **"Cite this repository"** in the GitHub sidebar.
+Use **"Cite this repository"** in the GitHub sidebar, or the details in [`CITATION.cff`](CITATION.cff).
 
 ## License
 
