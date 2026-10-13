@@ -53,9 +53,9 @@ See [`data/README.md`](data/README.md) for files, variables and provenance.
 
 All tables are in [`results/`](results/): the workbook `thesis_results.xlsx`, plus one CSV per table in `results/csv/`.
 
-## Changes from the submitted version
+## Changes from the thesis version
 
-Version 2.0 corrects several problems in the analysis that was submitted in 2026. These include aggregates and territories that had entered the sample, a per-period PPI scale, and clusters that were fitted separately for each period. The submitted version is preserved on the branch [`v1.0-submitted`](https://github.com/sahiljangra12/Thesis/tree/v1.0-submitted). What changed and why is documented in [`docs/method-changes.md`](docs/method-changes.md).
+Version 2.0 corrects several problems in the analysis as it appeared in the 2026 undergraduate thesis. These include aggregates and territories that had entered the sample, a per-period PPI scale, and clusters that were fitted separately for each period. The thesis version is preserved on the branch [`v1.0-thesis`](https://github.com/sahiljangra12/Thesis/tree/v1.0-thesis). What changed and why is documented in [`docs/method-changes.md`](docs/method-changes.md).
 
 ## Repository structure
 

@@ -1,6 +1,6 @@
-# Method changes: v1.0 (as submitted) → v2.0
+# Method changes: v1.0 (thesis) → v2.0
 
-Version 1.0 is the analysis as submitted in 2026, preserved on the branch `v1.0-submitted`. Version 2.0 fixes the problems below. Each fix is covered by a test in `tests/test_pipeline.py`, so the problem cannot come back unnoticed.
+Version 1.0 is the analysis as it appeared in the 2026 undergraduate thesis, preserved on the branch `v1.0-thesis`. Version 2.0 fixes the problems below. Each fix is covered by a test in `tests/test_pipeline.py`, so the problem cannot come back unnoticed.
 
 ## 1. Sample
 
@@ -52,7 +52,7 @@ Version 1.0 is the analysis as submitted in 2026, preserved on the branch `v1.0-
 
 ## Summary of headline numbers
 
-| | v1.0 (submitted) | v2.0 |
+| | v1.0 (thesis) | v2.0 |
 |---|---|---|
 | Countries | 195 (incl. 4 aggregates and 10 non-member entities) | 182 |
 | Mean PPI by period | 34.9 / 37.6 / 39.9 | 35.2 / 35.0 / 35.6 |
