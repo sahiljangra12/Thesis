@@ -1,15 +1,17 @@
-# Planetary Boundary Transgressions and Divergent Socio-Economic Pathways
-
-**A cross-national quantitative analysis of planetary pressure and development, 1990–2023**
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/header-thesis-dark.svg">
+  <img src="docs/header-thesis-light.svg" alt="Planetary Boundaries and Development: ecological pressure and development across 182 countries, 1990–2023" width="100%">
+</picture>
 
 [![CI](https://github.com/sahiljangra12/Thesis/actions/workflows/ci.yml/badge.svg)](https://github.com/sahiljangra12/Thesis/actions/workflows/ci.yml)
 
-Undergraduate thesis · BSc Analytics and Sustainability Studies · Tata Institute of Social Sciences, Mumbai (2026)
+**Planetary Boundary Transgressions and Divergent Socio-Economic Pathways: A Cross-National Quantitative Analysis**<br>
+Undergraduate thesis, BSc Analytics and Sustainability Studies, Tata Institute of Social Sciences, Mumbai (2026)<br>
 Author: Sahil · Supervisor: Dr. Kamal Kumar Murari
 
-[![Planetary Pressure Index vs life expectancy, 2011–2023](docs/preview.png)](https://sahiljangra12.github.io/Thesis/)
+<a href="https://sahiljangra12.github.io/Thesis/"><img src="docs/cover.jpg" alt="Planetary Pressure Index vs life expectancy, 2011–2023" width="100%"></a>
 
-**[Open the interactive chart →](https://sahiljangra12.github.io/Thesis/)**
+**[Open the interactive chart →](https://sahiljangra12.github.io/Thesis/)** · [Method changes in v2.0](docs/method-changes.md) · [Results tables](results/)
 
 ## Research question
 
