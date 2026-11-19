@@ -85,7 +85,6 @@ strong{font-weight:600;color:#fff}
   .nav.open::before{opacity:0}
 }
 html.menu-open,html.menu-open body{overflow:hidden}
-}
 
 /* ---------- hero ---------- */
 .hero{position:relative;min-height:100svh;display:flex;align-items:flex-end;overflow:hidden;background:#000}
@@ -96,7 +95,8 @@ html.menu-open,html.menu-open body{overflow:hidden}
 .hero canvas.ready{opacity:1}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#000d 0%,#0008 38%,#0000 70%),linear-gradient(0deg,#000 0%,#0000 36%);pointer-events:none}
 .hero .inner{position:relative;z-index:2;width:100%;max-width:var(--maxw);margin:0 auto;padding:0 var(--gutter) clamp(72px,12vh,140px)}
-.hero .display{max-width:17ch;font-size:clamp(40px,5.2vw,78px)}
+.hero{padding-top:104px}
+.hero .display{max-width:17ch;font-size:clamp(36px,min(5.2vw,9.5vh),78px)}
 .hero .lead{margin-top:22px}
 .scroll-cue{position:absolute;left:50%;bottom:22px;z-index:3;transform:translateX(-50%);width:22px;height:36px;border:2px solid #fffa;border-radius:12px}
 .scroll-cue::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;background:#fff;border-radius:2px;transform:translateX(-50%);animation:cue 1.8s infinite}

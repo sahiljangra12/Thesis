@@ -38,6 +38,7 @@ strong{color:#fff}
 @keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.16) translate(-1.5%,1%)}}
 .hero::after{background:linear-gradient(90deg,#000c 0%,#0007 40%,#0000 75%),linear-gradient(0deg,var(--bg) 0%,#0000 40%)}
 .hero .lead{color:#e8e4da}
+.hero .display{font-size:clamp(38px,min(6.4vw,11vh),104px)}
 .hero .btn.ghost{border-color:#ffffff73}
 
 /* surfaces */
