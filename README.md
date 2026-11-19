@@ -11,7 +11,7 @@ Author: Sahil · Supervisor: Dr. Kamal Kumar Murari
 
 <a href="https://sahiljangra12.github.io/Thesis/"><img src="docs/cover.jpg" alt="Planetary Pressure Index vs life expectancy, 2011–2023" width="100%"></a>
 
-**[Open the interactive chart →](https://sahiljangra12.github.io/Thesis/)** · [Method changes in v2.0](docs/method-changes.md) · [Results tables](results/)
+**[Open the interactive study site →](https://sahiljangra12.github.io/Thesis/)** · [Original chart](https://sahiljangra12.github.io/Thesis/ppi-chart.html) · [Method changes in v2.0](docs/method-changes.md) · [Results tables](results/)
 
 ## Research question
 

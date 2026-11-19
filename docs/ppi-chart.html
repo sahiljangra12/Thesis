@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planetary Pressure vs Life Expectancy</title>
+<style>
+:root{--font-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--border-radius-md:8px;
+--color-text-primary:#1a1a1a;--color-text-secondary:#5f5f5f;--color-text-info:#185fa5;
+--color-background-primary:#ffffff;--color-background-secondary:#f4f4f2;--color-background-info:#e6f0fa;--color-border-secondary:#cfcfcf}
+@media (prefers-color-scheme:dark){:root{--color-text-primary:#ececec;--color-text-secondary:#a8a8a8;--color-text-info:#7fb5ea;
+--color-background-primary:#1c1c1c;--color-background-secondary:#2a2a2a;--color-background-info:#1d3247;--color-border-secondary:#4a4a4a}}
+html,body{background:var(--color-background-primary)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.page{max-width:960px;margin:0 auto;padding:16px}
+.page footer{font-size:12px;color:var(--color-text-secondary);margin-top:1rem}
+.page footer a{color:var(--color-text-info)}
+</style></head><body><div class="page">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+#wrap{padding:1rem 0}
+#header{margin-bottom:1rem}
+#header h2{font-size:17px;font-weight:500;color:var(--color-text-primary);margin-bottom:2px}
+#header p{font-size:12px;color:var(--color-text-secondary)}
+#controls{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.btn{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--color-text-primary);transition:background 0.15s}
+.btn:hover{background:var(--color-background-secondary)}
+.btn.active{background:var(--color-background-info);border-color:transparent;color:var(--color-text-info)}
+#decade-tabs{display:flex;gap:6px}
+#speed-wrap{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--color-text-secondary);margin-left:auto}
+#speed-wrap input{width:80px}
+#chart-area{position:relative;width:100%}
+#chart-canvas{display:block;width:100%}
+#tooltip{position:absolute;pointer-events:none;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:8px 10px;font-size:12px;line-height:1.6;display:none;min-width:170px;z-index:10}
+#tooltip b{font-weight:500;font-size:13px}
+#legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--color-text-secondary)}
+.leg-item{display:flex;align-items:center;gap:5px}
+.leg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+#stats-bar{display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:6px 12px;font-size:12px;color:var(--color-text-secondary);min-width:100px}
+.stat b{display:block;font-size:16px;font-weight:500;color:var(--color-text-primary)}
+</style>
+
+<div id="wrap">
+<h2 class="sr-only">Gapminder-style animation: Planetary Pressure Index vs Life Expectancy across three periods for 182 countries, sized by population and coloured by cluster.</h2>
+
+<div id="header">
+  <h2>Planetary Pressure Index vs Life Expectancy, 1990–2023</h2>
+  <p>Bubble size ∝ population &nbsp;·&nbsp; Colour and cluster from one model fitted to all periods &nbsp;·&nbsp; Hover a bubble to identify a country</p>
+</div>
+
+<div id="controls">
+  <div id="decade-tabs"></div>
+  <button class="btn" id="playBtn" onclick="togglePlay()">▶ Animate</button>
+  <div id="speed-wrap">
+    <span>Speed</span>
+    <input type="range" min="1" max="5" value="3" step="1" id="speedRange" oninput="updateSpeed(this.value)">
+    <span id="speedLabel">3×</span>
+  </div>
+</div>
+
+<div id="stats-bar">
+  <div class="stat"><b id="s-n">—</b>Countries</div>
+  <div class="stat"><b id="s-medppi">—</b>Median PPI</div>
+  <div class="stat"><b id="s-medlife">—</b>Median life exp.</div>
+  <div class="stat"><b id="s-c4">—</b>In C4 (high development)</div>
+</div>
+
+<div id="chart-area">
+  <canvas id="chart-canvas" role="img" aria-label="Scatter plot of PPI vs Life Expectancy for 182 countries across three periods. Bubble size encodes population and colour encodes cluster membership."></canvas>
+  <div id="tooltip"></div>
+</div>
+
+<div id="legend">
+  <span id="cluster-legend" style="display:contents"></span>
+  <div class="leg-item" style="margin-left:8px"><div class="leg-dot" style="background:#888;width:7px;height:7px"></div>~10M pop</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#888;width:14px;height:14px"></div>~100M pop</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#888;width:22px;height:22px;margin-left:-4px"></div>~1B pop</div>
+</div>
+</div>
+
+<script>
+// Data and cluster definitions are generated by `python -m ppi_pathways` into data/ppi_animation.json.
+let CLUSTER_COLORS = {};
+let CLUSTER_LABELS = {};
+let RAW = {};
+let DECADES = [];
+const NOTABLE = ['China','India','United States','Indonesia','Brazil','Nigeria','Pakistan','Bangladesh','Japan','Germany','France','United Kingdom','Saudi Arabia','Qatar','Ethiopia','South Africa','Mexico','Russian Federation','Australia','Bahrain','Kuwait'];
+
+
+const canvas = document.getElementById('chart-canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const W = () => canvas.parentElement.clientWidth;
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+let currentDecade = '';
+let animTimer = null;
+let animProgress = 0;
+let animFrom = null, animTo = null;
+let animDuration = 1200;
+let isPlaying = false;
+let currentData = [];
+
+const PAD = {top:40, right:30, bottom:55, left:62};
+
+function resize() {
+  const w = W();
+  const h = Math.max(Math.min(Math.round(w * 0.62), 520), w < 560 ? 340 : 0);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = w * DPR;
+  canvas.height = h * DPR;
+  ctx.scale(DPR, DPR);
+  draw(currentData);
+}
+
+function getPlotDims() {
+  const w = parseInt(canvas.style.width) || W();
+  const h = parseInt(canvas.style.height) || 400;
+  return {
+    pw: w - PAD.left - PAD.right,
+    ph: h - PAD.top - PAD.bottom,
+    ox: PAD.left, oy: PAD.top, w, h
+  };
+}
+
+function xScale(ppi, dims) { return dims.ox + (ppi / 105) * dims.pw; }
+function yScale(life, dims) {
+  const mn = 35, mx = 90;
+  return dims.oy + dims.ph - ((life - mn) / (mx - mn)) * dims.ph;
+}
+function popRadius(pop) {
+  const r = Math.sqrt(pop / 1e6) * 1.4;
+  return Math.max(3, Math.min(r, 36));
+}
+
+function draw(data, alpha=1) {
+  const dims = getPlotDims();
+  const {pw,ph,ox,oy,w,h} = dims;
+  ctx.clearRect(0,0,w,h);
+
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const axisColor = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)';
+  const textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+  const quadColor = isDark ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.018)';
+
+  ctx.font = '11px system-ui,sans-serif';
+
+  ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5;
+  [0,20,40,60,80,100].forEach(v => {
+    const x = xScale(v, dims);
+    ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy+ph); ctx.stroke();
+    ctx.fillStyle = textColor; ctx.textAlign = 'center';
+    ctx.fillText(v, x, oy+ph+16);
+  });
+  [40,50,60,70,80,90].forEach(v => {
+    const y = yScale(v, dims);
+    ctx.beginPath(); ctx.moveTo(ox, y); ctx.lineTo(ox+pw, y); ctx.stroke();
+    ctx.fillStyle = textColor; ctx.textAlign = 'right';
+    ctx.fillText(v, ox-8, y+4);
+  });
+
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(ox, oy, pw, ph);
+
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+  ctx.font = 'bold 11px system-ui,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Planetary Pressure Index (0–100)', ox + pw/2, oy+ph+38);
+  ctx.save();
+  ctx.translate(14, oy + ph/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Life Expectancy at Birth (years)', 0, 0);
+  ctx.restore();
+
+  ctx.font = '500 13px system-ui,sans-serif';
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.32)';
+  ctx.textAlign = 'center';
+  if (w >= 560) {
+    ctx.fillText('← Lower pressure', ox + pw*0.22, oy+ph+30);
+    ctx.fillText('Higher pressure →', ox + pw*0.78, oy+ph+30);
+  }
+
+  ctx.font = '500 14px system-ui,sans-serif';
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)';
+  ctx.textAlign = 'right';
+  ctx.fillText(currentDecade, ox+pw-4, oy+18);
+
+  const sorted = [...data].sort((a,b)=>b.pop - a.pop);
+
+  sorted.forEach(d => {
+    const x = xScale(d.ppi, dims);
+    const y = yScale(d.life_exp, dims);
+    const r = popRadius(d.pop);
+    const col = CLUSTER_COLORS[d.cl];
+    ctx.globalAlpha = alpha * 0.78;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = r > 14 ? 1.5 : 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.font = '600 11px system-ui,sans-serif';
+  sorted.filter(d => NOTABLE.includes(d.country) && (w >= 560 || d.pop > 150e6)).forEach(d => {
+    const x = xScale(d.ppi, dims);
+    const y = yScale(d.life_exp, dims);
+    const r = popRadius(d.pop);
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.75)';
+    ctx.textAlign = 'left';
+    let lx = x + r + 3, ly = y - 3;
+    if (x + r + 50 > ox+pw) { lx = x - r - 2; ctx.textAlign = 'right'; }
+    ctx.fillText(d.country, lx, ly);
+  });
+}
+
+function updateStats(data) {
+  const n = data.length;
+  const ppis = data.map(d=>d.ppi).sort((a,b)=>a-b);
+  const lifes = data.map(d=>d.life_exp).sort((a,b)=>a-b);
+  const medPpi = ppis[Math.floor(n/2)].toFixed(1);
+  const medLife = lifes[Math.floor(n/2)].toFixed(1);
+  const c4n = data.filter(d=>d.cl==='C4').length;
+  document.getElementById('s-n').textContent = n;
+  document.getElementById('s-medppi').textContent = medPpi;
+  document.getElementById('s-medlife').textContent = medLife + ' yrs';
+  document.getElementById('s-c4').textContent = c4n + ' countries';
+}
+
+function switchDecade(d, animate=false) {
+  const prev = currentData;
+  currentDecade = d;
+  currentData = RAW[d] || [];
+  document.querySelectorAll('#decade-tabs .btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.decade === d);
+  });
+  updateStats(currentData);
+  if (animate && prev.length > 0) {
+    animateTransition(prev, currentData);
+  } else {
+    draw(currentData);
+  }
+}
+
+function animateTransition(from, to) {
+  cancelAnimationFrame(animTimer);
+  const fromMap = {};
+  from.forEach(d => fromMap[d.iso3] = d);
+  const toMap = {};
+  to.forEach(d => toMap[d.iso3] = d);
+
+  const startTime = performance.now();
+  function frame(now) {
+    const t = Math.min((now - startTime) / animDuration, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+
+    const dims = getPlotDims();
+    const {pw,ph,ox,oy,w,h} = dims;
+    ctx.clearRect(0,0,w,h);
+
+    const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+    const axisColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+
+    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5;
+    [0,20,40,60,80,100].forEach(v => {
+      const x = xScale(v, dims);
+      ctx.beginPath(); ctx.moveTo(x, oy); ctx.lineTo(x, oy+ph); ctx.stroke();
+      ctx.fillStyle = textColor; ctx.textAlign = 'center'; ctx.font = '11px system-ui,sans-serif';
+      ctx.fillText(v, x, oy+ph+16);
+    });
+    [40,50,60,70,80,90].forEach(v => {
+      const y2 = yScale(v, dims);
+      ctx.beginPath(); ctx.moveTo(ox, y2); ctx.lineTo(ox+pw, y2); ctx.stroke();
+      ctx.fillStyle = textColor; ctx.textAlign = 'right'; ctx.font = '11px system-ui,sans-serif';
+      ctx.fillText(v, ox-8, y2+4);
+    });
+    ctx.strokeStyle = axisColor; ctx.lineWidth = 1;
+    ctx.strokeRect(ox, oy, pw, ph);
+
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)';
+    ctx.setLineDash([5,4]); ctx.lineWidth = 1;
+    const mx = xScale(50, dims);
+    ctx.beginPath(); ctx.moveTo(mx, oy); ctx.lineTo(mx, oy+ph); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+    ctx.font = 'bold 11px system-ui,sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Planetary Pressure Index (0–100)', ox + pw/2, oy+ph+38);
+    ctx.save(); ctx.translate(14, oy + ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Life Expectancy at Birth (years)', 0, 0); ctx.restore();
+
+    ctx.font = '500 14px system-ui,sans-serif';
+    ctx.fillStyle = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)';
+    ctx.textAlign = 'right';
+    ctx.fillText(currentDecade, ox+pw-4, oy+18);
+
+    const merged = {};
+    to.forEach(d => {
+      const f = fromMap[d.iso3];
+      if (f) {
+        merged[d.iso3] = {
+          country: d.country, iso3: d.iso3,
+          cl: ease > 0.5 ? d.cl : f.cl,
+          ppi: f.ppi + (d.ppi - f.ppi) * ease,
+          life_exp: f.life_exp + (d.life_exp - f.life_exp) * ease,
+          pop: f.pop + (d.pop - f.pop) * ease,
+          region: d.region, income: d.income, gdp: d.gdp
+        };
+      } else {
+        merged[d.iso3] = {...d, _alpha: ease};
+      }
+    });
+    from.forEach(d => {
+      if (!toMap[d.iso3]) {
+        merged[d.iso3] = {...d, _alpha: 1 - ease};
+      }
+    });
+
+    const sorted = Object.values(merged).sort((a,b)=>b.pop - a.pop);
+    sorted.forEach(d => {
+      const x = xScale(d.ppi, dims);
+      const y2 = yScale(d.life_exp, dims);
+      const r = popRadius(d.pop);
+      const col = CLUSTER_COLORS[d.cl];
+      const a = d._alpha !== undefined ? d._alpha : 1;
+      ctx.globalAlpha = a * 0.78;
+      ctx.beginPath(); ctx.arc(x, y2, r, 0, Math.PI*2);
+      ctx.fillStyle = col; ctx.fill();
+      ctx.globalAlpha = a;
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)';
+      ctx.lineWidth = r > 14 ? 1.5 : 0.8;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+
+    if (t < 1) { animTimer = requestAnimationFrame(frame); }
+    else { draw(currentData); }
+  }
+  animTimer = requestAnimationFrame(frame);
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('playBtn');
+  if (isPlaying) {
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('active');
+    playNext();
+  } else {
+    btn.textContent = '▶ Animate';
+    btn.classList.remove('active');
+  }
+}
+
+function playNext() {
+  if (!isPlaying) return;
+  const idx = DECADES.indexOf(currentDecade);
+  const next = DECADES[(idx + 1) % DECADES.length];
+  switchDecade(next, true);
+  const delay = animDuration + 1800;
+  setTimeout(() => { if (isPlaying) playNext(); }, delay);
+}
+
+function updateSpeed(v) {
+  document.getElementById('speedLabel').textContent = v + '×';
+  animDuration = Math.round(2400 / v);
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const dims = getPlotDims();
+  let best = null, bestDist = 28;
+  currentData.forEach(d => {
+    const x = xScale(d.ppi, dims);
+    const y = yScale(d.life_exp, dims);
+    const dist = Math.hypot(mx-x, my-y);
+    if (dist < Math.max(popRadius(d.pop) + 4, bestDist)) { best = d; bestDist = dist; }
+  });
+  if (best) {
+    tooltip.style.display = 'block';
+    let tx = e.clientX - rect.left + 14;
+    let ty = e.clientY - rect.top - 10;
+    if (tx + 185 > parseInt(canvas.style.width)) tx = e.clientX - rect.left - 190;
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+    const col = CLUSTER_COLORS[best.cl];
+    tooltip.innerHTML = `<b>${best.country}</b> (${best.iso3})<br>
+      <span style="color:${col};font-weight:500">${best.cl}: ${CLUSTER_LABELS[best.cl]}</span><br>
+      PPI: <b>${best.ppi.toFixed(1)}</b> &nbsp; Life exp: <b>${best.life_exp.toFixed(1)} yrs</b><br>
+      GDP/cap: <b>$${Math.round(best.gdp).toLocaleString()}</b><br>
+      Population: <b>${(best.pop/1e6).toFixed(1)}M</b><br>
+      ${best.region ? 'Region: ' + best.region : ''}`;
+  } else {
+    tooltip.style.display = 'none';
+  }
+});
+canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
+fetch('data/ppi_animation.json')
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(payload => {
+    DECADES = payload.periods;
+    RAW = payload.rows;
+    for (const [code, c] of Object.entries(payload.clusters)) {
+      CLUSTER_COLORS[code] = c.color;
+      CLUSTER_LABELS[code] = c.label;
+    }
+    document.getElementById('decade-tabs').innerHTML = DECADES.map(d =>
+      `<button class="btn" data-decade="${d}" onclick="switchDecade('${d}')">${d}</button>`).join('');
+    document.getElementById('cluster-legend').innerHTML = Object.keys(CLUSTER_COLORS).map(c =>
+      `<div class="leg-item"><div class="leg-dot" style="background:${CLUSTER_COLORS[c]}"></div>${c}: ${CLUSTER_LABELS[c]}</div>`).join('');
+    switchDecade(DECADES[0]);
+    resize();
+  })
+  .catch(err => {
+    document.getElementById('chart-area').textContent = 'Could not load the chart data (' + err.message + ').';
+  });
+window.addEventListener('resize', resize);
+</script>
+
+<footer>From the undergraduate thesis <em>Planetary Boundary Transgressions and Divergent Socio-Economic Pathways</em> (Sahil, TISS Mumbai, 2026). <a href="https://github.com/sahiljangra12/Thesis">Code and data</a></footer>
+</div></body></html>
