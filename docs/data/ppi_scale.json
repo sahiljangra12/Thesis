@@ -1,0 +1,90 @@
+{
+ "ppi_vars": [
+  "renewable_energy",
+  "forest_pct",
+  "agri_land",
+  "fertilizer",
+  "pm25",
+  "energy_use_pc"
+ ],
+ "ppi_inverse": [
+  "renewable_energy",
+  "forest_pct"
+ ],
+ "ppi_min_indicators": 4,
+ "z_mean": {
+  "renewable_energy": -34.77278998,
+  "forest_pct": -32.54520324,
+  "agri_land": 39.23268255,
+  "fertilizer": 149.27365069,
+  "pm25": 28.41400161,
+  "energy_use_pc": 2123.69036574
+ },
+ "z_sd": {
+  "renewable_energy": 30.54567479,
+  "forest_pct": 24.42393219,
+  "agri_land": 21.96551148,
+  "fertilizer": 304.27278415,
+  "pm25": 16.31778871,
+  "energy_use_pc": 2686.34630016
+ },
+ "raw_min": -1.28886718,
+ "raw_max": 2.35578948,
+ "cluster_vars": [
+  "ppi",
+  "log_gdp_pc",
+  "life_expectancy",
+  "infant_mortality",
+  "urban_population_pct"
+ ],
+ "scaler_mean": [
+  35.28470104,
+  8.11103417,
+  68.3361138,
+  33.19486484,
+  54.73894065
+ ],
+ "scaler_scale": [
+  13.61446882,
+  1.54717925,
+  9.34073271,
+  30.66970621,
+  22.7792223
+ ],
+ "centers": [
+  [
+   0.66308532,
+   1.30146756,
+   1.06418342,
+   -0.87244473,
+   1.13646042
+  ],
+  [
+   -0.36077571,
+   -1.22879408,
+   -1.62519895,
+   1.76092961,
+   -1.03223435
+  ],
+  [
+   -0.61055825,
+   -0.63253574,
+   -0.38142019,
+   0.23692922,
+   -0.80522707
+  ],
+  [
+   0.11409672,
+   0.11677309,
+   0.32968964,
+   -0.44417456,
+   0.25055591
+  ]
+ ],
+ "center_labels": [
+  "C4",
+  "C1",
+  "C2",
+  "C3"
+ ]
+}

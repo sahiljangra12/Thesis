@@ -43,11 +43,29 @@ See [`data/README.md`](data/README.md) for files, variables and provenance.
 
 ![Clusters by period](figures/fig3_clusters_by_period.png)
 
-- **Development and pressure rise together.** In every period, a higher PPI goes with higher income, longer life expectancy, lower infant mortality and more urbanisation (all p < 0.05). The association weakens over time; the correlation with life expectancy, for example, falls from 0.40 in 1990–2000 to 0.25 in 2011–2023.
+- **Development and pressure rise together.** In every period, a higher PPI goes with higher income, longer life expectancy, lower infant mortality and more urbanisation (all p < 0.05). In decade averages the correlation with life expectancy moves from 0.40 in 1990–2000 to 0.25 in 2011–2023, but the year-by-year test below finds no statistically significant weakening.
 - **Female labour-force participation runs the other way.** It is consistently lower where the PPI is higher (r ≈ −0.34 to −0.37). The PPI has no association with unemployment.
 - **Countries move up, and pressure follows.** About 70% of countries stay in the same cluster from one period to the next. Almost every move is upward (48 of 49 moves from the 1990s to the 2000s, and all 53 from the 2000s to 2011–2023). The step from C2 to C3, the most common move from lower- to higher-pressure development, happened 36 times.
 - **Global average pressure is roughly flat.** The mean PPI is 35.2, 35.0 and 35.6 across the three periods.
 - **Silhouette is about 0.25 at K = 4.** The clusters overlap, so they should be read as a typology rather than sharply separated groups.
+
+### Year by year (with uncertainty)
+
+Every country-year from 1990 to 2023 is placed on the same pooled PPI scale and assigned to the nearest published cluster centre (`src/ppi_pathways/annual.py`; tables `results/csv/annual_*.csv`). Nothing is re-estimated, and averages of the annual PPI reproduce the period PPI (r = 0.996, mean absolute difference 0.52 points).
+
+| Test | Estimate | 95% CI | p | Verdict |
+|---|---|---|---|---|
+| Within-country PPI trend (country fixed effects, SE clustered by country; 182 countries) | +0.018 points/yr | −0.030 to 0.066 | 0.46 | no detectable change |
+| Within-country life-expectancy trend (same model) | +0.284 years/yr | 0.258 to 0.311 | < 0.001 | significant rise |
+| Change in r(PPI, life expectancy), 1990 → 2022 (paired country bootstrap, 150 countries) | −0.039 | −0.153 to 0.069 | 0.47 | not significant |
+| Change in r(PPI, log GDP per capita), 1990 → 2022 | −0.089 | −0.194 to 0.003 | 0.06 | not significant |
+| Change in r(PPI, infant mortality), 1990 → 2022 | +0.071 | −0.043 to 0.190 | 0.21 | not significant |
+
+Yearly means carry 95% country-bootstrap intervals and yearly correlations 95% Fisher-z intervals. 2023 has partial coverage (70 countries with a PPI) and is flagged wherever it appears.
+
+### Latest data (provisional)
+
+A weekly GitHub Actions job ([`live-data.yml`](.github/workflows/live-data.yml)) runs [`tools/fetch_live.py`](tools/fetch_live.py): it downloads the newest World Bank WDI values and applies the published scale and cluster centres ([`docs/data/ppi_scale.json`](docs/data/ppi_scale.json)) to write `docs/data/live.json`. It reports its agreement with the thesis data for overlapping years. The live layer is shown on the study site as hollow, labelled points and never changes the results above.
 
 | Transitions between periods | PPI and development outcomes |
 |---|---|
@@ -68,7 +86,8 @@ tests/               Checks on the sample, the PPI, the clusters and the regress
 data/                Input panel, country list, region lookup, source documentation
 results/             Generated tables (xlsx + csv)
 figures/             Generated figures
-docs/                Interactive chart (GitHub Pages) and method notes
+docs/                Study site (GitHub Pages), its data files and method notes
+tools/               fetch_live.py: weekly provisional update from the World Bank API
 ```
 
 ## Reproducing the analysis

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from . import clustering, config, data, figures, index, regression
+from . import annual, clustering, config, data, figures, index, regression
 
 
 @dataclass
@@ -38,6 +38,7 @@ def run() -> Results:
     reg = regression.ppi_regressions(periods)
     res = Results(sample, periods, clustered, model, k_diag, trans, reg)
     res.tables = build_tables(res)
+    res.tables.update(annual.build(sample, periods, model))
     return res
 
 
@@ -126,6 +127,7 @@ def write_outputs(res: Results) -> None:
     figures.regression_dots(res.regressions, f / "fig5_ppi_correlations.png")
 
     write_animation_data(res, labels)
+    write_annual_data(res, labels)
 
 
 def _normalise_xlsx(path) -> None:
@@ -166,6 +168,59 @@ def write_animation_data(res: Results, labels: dict[str, str]) -> None:
         ]
     config.DOCS_DATA_DIR.mkdir(parents=True, exist_ok=True)
     (config.DOCS_DATA_DIR / "ppi_animation.json").write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
+
+def write_annual_data(res: Results, labels: dict[str, str]) -> None:
+    """Year-by-year data for the study site (docs/data/thesis_annual.json)."""
+    a = res.tables["annual_ppi"]
+    years = list(range(config.FIRST_YEAR, config.LAST_YEAR + 1))
+    def col(g: pd.DataFrame, name: str, nd: int) -> list:
+        return [None if pd.isna(v) else round(float(v), nd) for v in g[name]]
+
+    countries = {}
+    for iso, g in a.groupby("iso3"):
+        g = g.set_index("year").reindex(years)
+        countries[iso] = {
+            "n": g["country"].dropna().iloc[0],
+            "ppi": col(g, "ppi", 2),
+            "le": col(g, "life_expectancy", 2),
+            "gdp": col(g, "log_gdp_pc", 3),
+            "im": col(g, "infant_mortality", 1),
+            "urb": col(g, "urban_population_pct", 1),
+            "pop": col(g, "population", 0),
+            "cl": [None if pd.isna(v) else v for v in g["profile"]],
+        }
+
+    def records(t):
+        return json.loads(t.to_json(orient="records"))
+    payload = {
+        "years": years,
+        "clusters": {c: {"label": labels[c], "color": config.CLUSTER_COLORS[c]}
+                     for c in config.CLUSTER_CODES},
+        "countries": countries,
+        "summary": records(res.tables["annual_summary"]),
+        "correlations": records(res.tables["annual_correlations"]),
+        "tests": records(res.tables["annual_tests"]),
+    }
+    config.DOCS_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    # scale and model parameters, so new years can be placed on the same scale (tools/fetch_live.py)
+    scale = annual.period_scale(res.periods)
+    m = res.model
+    params = {
+        "ppi_vars": config.PPI_VARS, "ppi_inverse": config.PPI_INVERSE,
+        "ppi_min_indicators": config.PPI_MIN_INDICATORS,
+        "z_mean": {k: round(float(v), 8) for k, v in scale["mean"].items()},
+        "z_sd": {k: round(float(v), 8) for k, v in scale["sd"].items()},
+        "raw_min": round(scale["raw_min"], 8), "raw_max": round(scale["raw_max"], 8),
+        "cluster_vars": config.CLUSTER_VARS,
+        "scaler_mean": [round(float(v), 8) for v in m.scaler.mean_],
+        "scaler_scale": [round(float(v), 8) for v in m.scaler.scale_],
+        "centers": [[round(float(v), 8) for v in c] for c in m.kmeans.cluster_centers_],
+        "center_labels": [m.label_map[i] for i in range(len(m.kmeans.cluster_centers_))],
+    }
+    (config.DOCS_DATA_DIR / "ppi_scale.json").write_text(json.dumps(params, indent=1), encoding="utf-8")
+    (config.DOCS_DATA_DIR / "thesis_annual.json").write_text(
         json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 

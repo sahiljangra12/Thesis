@@ -120,3 +120,40 @@ def test_gdp_regression_uses_log_gdp(periods):
     gdp = reg[(reg["outcome"] == config.SE_LABELS["log_gdp_pc"]) & (reg["period"] == "1990–2000")]
     sub = periods[periods["period"] == "D1"][["ppi", "log_gdp_pc"]].dropna()
     assert gdp["r"].item() == pytest.approx(np.corrcoef(sub["ppi"], sub["log_gdp_pc"])[0, 1])
+
+
+# --- year-by-year extension ----------------------------------------------
+
+def test_annual_ppi_reproduces_period_ppi(sample, periods, fitted):
+    from ppi_pathways import annual
+    a = annual.annual_ppi(sample, annual.period_scale(periods))
+    v = annual.validation(a, periods)
+    assert v["estimate"] > 0.98
+
+
+def test_annual_profiles_use_period_model(sample, periods, fitted):
+    from ppi_pathways import annual
+    _, model = fitted
+    a = annual.annual_ppi(sample, annual.period_scale(periods))
+    lab = annual.annual_profiles(a, model).dropna()
+    assert set(lab.unique()) <= set(config.CLUSTER_CODES)
+    assert len(lab) > 4000
+
+
+def test_within_trend_recovers_known_slope_with_valid_intervals():
+    from ppi_pathways import annual
+    covered = 0
+    for seed in range(100):
+        rng = np.random.default_rng(seed)
+        rows = [{"iso3": f"C{i}", "year": y, "ppi": 10 * i + 0.5 * (y - 2000) + rng.normal(0, 0.1)}
+                for i in range(40) for y in range(1990, 2021)]
+        t = annual.within_trend(pd.DataFrame(rows))
+        assert abs(t["estimate"] - 0.5) < 0.01
+        covered += t["ci_low"] < 0.5 < t["ci_high"]
+    assert covered >= 90  # nominal 95% coverage
+
+
+def test_fisher_interval_contains_estimate():
+    from ppi_pathways import annual
+    lo, hi = annual.fisher_ci(0.4, 177)
+    assert lo < 0.4 < hi and round(lo, 2) == 0.27 and round(hi, 2) == 0.52

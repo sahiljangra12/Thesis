@@ -1,22 +1,36 @@
-/* Thesis site ("Terra"): plates, findings, beeswarm, scatter, fingerprints, profiles, alluvial, associations, K, map. */
+/* Thesis site ("Terra", dark): year-by-year dashboards with uncertainty, plus the published period results. */
 (async function () {
   if (typeof THESIS === 'undefined') return;
-  const X = await fetch('data/thesis-extra.json?v=20261119').then(r => r.json());
-  const P = THESIS.periods, CL = THESIS.clusters, K = ['C1', 'C2', 'C3', 'C4'];
+  const V = '20261119c';
+  const [X, AN] = await Promise.all([
+    fetch(`data/thesis-extra.json?v=${V}`).then(r => r.json()),
+    fetch(`data/thesis_annual.json?v=${V}`).then(r => r.json())
+  ]);
+  // live layer: newest copy on the main branch, falling back to the deployed copy
+  const LIVE = await fetch('https://raw.githubusercontent.com/sahiljangra12/Thesis/main/docs/data/live.json', { cache: 'no-store' })
+    .then(r => (r.ok ? r.json() : Promise.reject())).catch(() => fetch('data/live.json').then(r => (r.ok ? r.json() : null)).catch(() => null));
+
+  const INK = '#ece6d8', MUTED = '#aaa592', GRID = 'rgba(236,230,216,.07)', SAND = '#d9c9a3', SAGE = '#9cc7a4', PANEL = '#151912';
+  const P = THESIS.periods, CL = AN.clusters, K = ['C1', 'C2', 'C3', 'C4'];
+  const YEARS = AN.years, Y0 = YEARS[0], Y1 = YEARS[YEARS.length - 1];
   const A = THESIS_ANNUAL, COL = Object.fromEntries(A.columns.map((c, i) => [c, i]));
+  const C = AN.countries, isos = Object.keys(C).sort((a, b) => C[a].n.localeCompare(C[b].n));
+  const SUM = Object.fromEntries(AN.summary.map(s => [s.year, s]));
   const fmt = (v, n = 1) => (v == null || !isFinite(v) ? 'n/a' : (+v).toLocaleString('en-US', { maximumFractionDigits: n, minimumFractionDigits: n }));
-  const byIso = {};
-  P.forEach(p => THESIS.rows[p].forEach(r => { (byIso[r.iso3] = byIso[r.iso3] || {})[p] = r; }));
-  const nameOf = iso => (byIso[iso] && Object.values(byIso[iso])[0].country) || iso;
+  const yi = y => y - Y0;
+  const FULL = AN.summary.filter(s => s.countries_with_ppi >= 150).map(s => s.year);
+  const FIRSTFULL = Math.min(...FULL), LASTFULL = Math.max(...FULL);
   const onReveal = (el, fn) => {
     let done = false;
     const go = () => { if (!done) { done = true; fn(); } };
     if (el.classList.contains('in')) go(); else el.addEventListener('reveal', go, { once: true });
   };
   const legendHTML = () => K.map(k => `<span><i style="background:${CL[k].color};border-radius:50%"></i>${k} · ${CL[k].label}</span>`).join('');
-  const tipFor = (r, p) => `<b>${r.country}</b>${p} · ${r.cl ? r.cl + ' · ' + CL[r.cl].label : 'not grouped'}<br>PPI ${fmt(r.ppi)} · life expectancy ${fmt(r.life_exp)} years<br>GDP per person $${fmt(r.gdp, 0)} · ${r.region}`;
+  const liveRow = (iso, y) => LIVE && LIVE.countries[iso] && LIVE.countries[iso].years[y];
+  const LIVE_YEARS = LIVE ? Object.keys(LIVE.coverage || {}).map(Number).filter(y => y > Y1 && LIVE.coverage[y] >= 1) : [];
+  const YMAX = Math.max(Y1, ...LIVE_YEARS);
 
-  // ---------- period means of the annual indicators (2011–2023) for plates and fingerprints
+  // ---------- indicator means for the plates; per-year percentiles for fingerprints
   const IND = [
     ['renewable_energy', 'Renewable energy share', '%', true],
     ['forest_pct', 'Forest cover', '% of land', true],
@@ -25,134 +39,225 @@
     ['pm25', 'PM2.5 exposure', 'µg/m³', false],
     ['energy_use_pc', 'Energy use per person', 'kgoe', false]
   ];
-  const mean = {};
-  for (const r of A.rows) {
-    const y = r[COL.year]; if (y < 2011 || y > 2023) continue;
-    const m = (mean[r[COL.iso3]] = mean[r[COL.iso3]] || {});
-    for (const [k] of IND) { const v = r[COL[k]]; if (v == null) continue; (m[k] = m[k] || []).push(v); }
+  const byYear = {};
+  for (const r of A.rows) (byYear[r[COL.year]] = byYear[r[COL.year]] || {})[r[COL.iso3]] = r;
+  const mean1123 = {};
+  for (let y = 2011; y <= 2023; y++) for (const [iso, r] of Object.entries(byYear[y] || {})) {
+    const m = (mean1123[iso] = mean1123[iso] || {});
+    for (const [k] of IND) { const v = r[COL[k]]; if (v != null) (m[k] = m[k] || []).push(v); }
   }
-  for (const iso in mean) for (const k in mean[iso]) { const a = mean[iso][k]; mean[iso][k] = a.reduce((s, v) => s + v, 0) / a.length; }
-  // pressure percentile per indicator (reversed indicators: less = more pressure)
-  const pct = {};
-  for (const [k, , , rev] of IND) {
-    const list = Object.keys(mean).filter(i => mean[i][k] != null && byIso[i]).map(i => [i, rev ? -mean[i][k] : mean[i][k]]).sort((a, b) => a[1] - b[1]);
-    list.forEach(([i], j) => { (pct[i] = pct[i] || {})[k] = list.length > 1 ? j / (list.length - 1) * 100 : 50; });
-  }
-
-  // ---------- plates
+  for (const iso in mean1123) for (const k in mean1123[iso]) { const a = mean1123[iso][k]; mean1123[iso][k] = a.reduce((s, v) => s + v, 0) / a.length; }
   document.querySelectorAll('[data-ind]').forEach(b => {
-    const [iso, k, unit] = b.dataset.ind.split(':');
-    const v = mean[iso] && mean[iso][k];
+    const [iso, k, unit] = b.dataset.ind.split(':'), v = mean1123[iso] && mean1123[iso][k];
     b.textContent = v == null ? 'n/a' : fmt(v, v >= 100 ? 0 : 1) + (unit.startsWith('%') ? '%' : unit);
   });
+  const pctCache = {};
+  function percentiles(y) {
+    if (pctCache[y]) return pctCache[y];
+    const rows = byYear[y] || {}, out = {};
+    for (const [k, , , rev] of IND) {
+      const list = Object.keys(rows).filter(i => rows[i][COL[k]] != null && C[i]).map(i => [i, rev ? -rows[i][COL[k]] : rows[i][COL[k]]]).sort((a, b) => a[1] - b[1]);
+      list.forEach(([i], j) => { (out[i] = out[i] || {})[k] = list.length > 1 ? j / (list.length - 1) * 100 : 50; });
+    }
+    return (pctCache[y] = out);
+  }
 
-  // ---------- findings from the result tables
-  const reg = X.regressions, le = reg.filter(r => r.outcome.startsWith('Life expectancy'));
-  const r0 = le.find(r => r.period === P[0]).r, r2 = le.find(r => r.period === P[2]).r;
-  document.getElementById('f-r').innerHTML = `${r0.toFixed(2)} → ${r2.toFixed(2)}`;
-  document.getElementById('f-ppi').textContent = X.summary.map(s => (+s.mean_ppi).toFixed(1)).join(' · ');
-  document.getElementById('f-sil').textContent = X.k.find(k => k.k === 4).sil.toFixed(2);
-
-  // ---------- beeswarm of PPI by period
-  (function swarm() {
-    const svg = document.getElementById('swarm'); if (!svg) return;
-    const W = 1100, rowH = 150, m = { l: 110, r: 20, t: 20, b: 36 }, H = m.t + m.b + rowH * P.length;
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const x = v => m.l + v / 100 * (W - m.l - m.r);
-    const ax = svgEl('g', { class: 'axis' }, svg);
-    for (let v = 0; v <= 100; v += 10) { svgEl('line', { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: 'rgba(29,31,26,.07)' }, ax); const t = svgEl('text', { x: x(v), y: H - 12, 'text-anchor': 'middle' }, ax); t.textContent = v; }
-    const r = 4.4, dots = [];
-    P.forEach((p, k) => {
-      const cy = m.t + rowH * k + rowH / 2;
-      const lab = svgEl('text', { x: 0, y: cy + 5, fill: '#1d1f1a', 'font-family': 'Fraunces', 'font-size': 20 }, svg); lab.textContent = p;
-      const rows = THESIS.rows[p].filter(d => d.ppi != null).sort((a, b) => a.ppi - b.ppi);
-      const placed = [];
-      rows.forEach(d => {
-        const px = x(d.ppi); let best = cy;
-        for (let j = 0; j < 30; j++) {
-          let ok = false;
-          for (const s of j ? [1, -1] : [1]) {
-            const yy = cy + s * j * r * 0.95;
-            if (placed.every(q => (q[0] - px) ** 2 + (q[1] - yy) ** 2 >= (2 * r + .6) ** 2)) { best = yy; ok = true; break; }
-          }
-          if (ok) break;
-        }
-        placed.push([px, best]);
-        const c = svgEl('circle', { cx: px, cy, r, fill: d.cl ? CL[d.cl].color : '#999', 'fill-opacity': .9, tabindex: 0 }, svg);
-        c.dataset.y = best; c.style.transition = `cy 1s cubic-bezier(.2,.8,.2,1) ${Math.random() * 0.5}s`;
-        const show = e => showTip(tipFor(d, p), e.clientX || px, e.clientY || best);
-        c.addEventListener('pointerenter', show); c.addEventListener('focus', show); c.addEventListener('pointerleave', hideTip); c.addEventListener('blur', hideTip);
-        dots.push(c);
-      });
-      const mu = +X.summary[k].mean_ppi;
-      svgEl('line', { x1: x(mu), x2: x(mu), y1: cy - rowH / 2 + 10, y2: cy + rowH / 2 - 10, stroke: '#1d1f1a', 'stroke-width': 2 }, svg);
-      const mt = svgEl('text', { x: x(mu) + 6, y: cy - rowH / 2 + 22, fill: '#1d1f1a', 'font-family': 'Barlow', 'font-size': 12, 'font-weight': 600 }, svg); mt.textContent = `mean ${mu.toFixed(1)}`;
-    });
-    const t = svgEl('text', { x: W - m.r, y: H - 12 - 16, 'text-anchor': 'end', class: 'axis' }, svg);
-    document.getElementById('swarm-legend').innerHTML = legendHTML();
-    onReveal(document.getElementById('swarmviz'), () => requestAnimationFrame(() => requestAnimationFrame(() => dots.forEach(c => c.setAttribute('cy', c.dataset.y)))));
+  // ---------- statistical findings (results/csv/annual_tests.csv)
+  (function tests() {
+    const host = document.getElementById('tests'); if (!host) return;
+    const T = AN.tests, find = s => T.find(t => t.measure.startsWith(s));
+    const ppi = find('ppi per year'), le = find('life_expectancy per year'), ch = find('change in r(PPI, Life'), val = find('r(mean of annual');
+    const sig = t => t.ci_low > 0 || t.ci_high < 0;
+    const s0 = SUM[FIRSTFULL], s1 = SUM[LASTFULL];
+    const lePeriod = X.regressions.filter(r => r.outcome.startsWith('Life expectancy'));
+    const pv = p => (p < 0.001 ? 'p < 0.001' : 'p = ' + fmt(p, 3));
+    host.innerHTML = [
+      `<div class="test"><span class="k">Pressure within countries</span><b>${ppi.estimate >= 0 ? '+' : ''}${fmt(ppi.estimate, 3)}<small style="font-size:.4em"> PPI points / year</small></b><span class="ci">95% CI ${fmt(ppi.ci_low, 3)} to ${fmt(ppi.ci_high, 3)} · ${pv(ppi.p_value)} · ${ppi.countries} countries, ${ppi.observations.toLocaleString('en-US')} country-years</span><p>Country fixed effects, standard errors clustered by country. Mean PPI was ${fmt(s0.mean_ppi)} in ${s0.year} and ${fmt(s1.mean_ppi)} in ${s1.year}; the intervals overlap.</p><span class="verdict ${sig(ppi) ? 'yes' : 'no'}">${sig(ppi) ? 'Significant change' : 'No detectable change'}</span></div>`,
+      `<div class="test"><span class="k">Life expectancy within countries</span><b>+${fmt(le.estimate, 3)}<small style="font-size:.4em"> years / year</small></b><span class="ci">95% CI ${fmt(le.ci_low, 3)} to ${fmt(le.ci_high, 3)} · ${pv(le.p_value)} · ${le.countries} countries</span><p>The same model for life expectancy: lives lengthened by about ${fmt(le.estimate * 10, 1)} years per decade while measured pressure stayed level.</p><span class="verdict ${sig(le) ? 'yes' : 'no'}">${sig(le) ? 'Significant rise' : 'No detectable change'}</span></div>`,
+      `<div class="test"><span class="k">Has the pressure–health link weakened?</span><b>${fmt(ch.estimate, 3)}<small style="font-size:.4em"> change in r</small></b><span class="ci">95% CI ${fmt(ch.ci_low, 3)} to ${fmt(ch.ci_high, 3)} · ${pv(ch.p_value)} · ${(ch.measure.match(/\d{4}→\d{4}/) || [''])[0]} · ${ch.countries} countries</span><p>Paired country bootstrap (${ch.method.replace('paired country bootstrap, ', '')}). In decade averages r moved from ${fmt(lePeriod[0].r, 2)} to ${fmt(lePeriod[2].r, 2)}, but year by year the change is within sampling uncertainty.</p><span class="verdict ${sig(ch) ? 'yes' : 'no'}">${sig(ch) ? 'Significant weakening' : 'Not statistically significant'}</span></div>`
+    ].join('');
+    const t = document.getElementById('trend-note');
+    if (t) t.textContent = `Annual values use the published pooled scale; averages of annual PPI reproduce the period PPI with r = ${fmt(val.estimate, 3)} (${val.method}). Hollow points: years with fewer than 150 countries.`;
   })();
 
-  // ---------- animated scatter
+  // ---------- pressure over time (mean + bootstrap band) / profile shares
+  (function trend() {
+    const svg = document.getElementById('trend'); if (!svg) return;
+    const W = 1100, H = 380, m = { l: 48, r: 20, t: 18, b: 34 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const x = y => m.l + (y - Y0) / (YMAX - Y0) * (W - m.l - m.r);
+    const layer = svgEl('g', {}, svg);
+    const leg = document.getElementById('trend-legend');
+    function axes(y, ticks, fmtT) {
+      const ax = svgEl('g', { class: 'axis' }, layer);
+      ticks.forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = fmtT(v); });
+      for (let yy = 1990; yy <= YMAX; yy += 5) { const t = svgEl('text', { x: x(yy), y: H - 10, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
+    }
+    function drawPPI() {
+      layer.innerHTML = '';
+      const y = v => m.t + (1 - (v - 25) / (45 - 25)) * (H - m.t - m.b);
+      axes(y, [25, 30, 35, 40, 45], v => v);
+      const S = AN.summary;
+      const up = S.map(s => [x(s.year), y(s.ci_high)]), dn = S.map(s => [x(s.year), y(s.ci_low)]).reverse();
+      svgEl('path', { d: 'M' + up.join('L') + 'L' + dn.join('L') + 'Z', fill: SAND, 'fill-opacity': .14 }, layer);
+      const line = svgEl('path', { d: 'M' + S.map(s => [x(s.year), y(s.mean_ppi)]).join('L'), fill: 'none', stroke: SAND, 'stroke-width': 2.6, class: 'draw' }, layer);
+      line.style.setProperty('--len', line.getTotalLength());
+      requestAnimationFrame(() => requestAnimationFrame(() => { line.style.strokeDashoffset = 0; }));
+      svgEl('path', { d: 'M' + S.map(s => [x(s.year), y(s.median_ppi)]).join('L'), fill: 'none', stroke: MUTED, 'stroke-width': 1.2, 'stroke-dasharray': '3 4' }, layer);
+      S.forEach(s => {
+        const full = s.countries_with_ppi >= 150;
+        const c = svgEl('circle', { cx: x(s.year), cy: y(s.mean_ppi), r: 4, fill: full ? SAND : PANEL, stroke: SAND, 'stroke-width': 1.5 }, layer);
+        c.addEventListener('pointerenter', e => showTip(`<b>${s.year}</b>Mean PPI ${fmt(s.mean_ppi)} (95% CI ${fmt(s.ci_low)}–${fmt(s.ci_high)})<br>Median ${fmt(s.median_ppi)} · ${s.countries_with_ppi} countries${full ? '' : '<br>Partial coverage: compare with care'}`, e.clientX, e.clientY));
+        c.addEventListener('pointerleave', hideTip);
+      });
+      LIVE_YEARS.forEach(yy => {
+        const v = Object.values(LIVE.countries).map(c => c.years[yy] && c.years[yy].ppi).filter(z => z != null);
+        if (v.length < 30) return; // too few countries for a comparable mean
+        const mu = v.reduce((a, b) => a + b, 0) / v.length;
+        const c = svgEl('rect', { x: x(yy) - 4, y: y(mu) - 4, width: 8, height: 8, fill: 'none', stroke: SAGE, 'stroke-width': 1.5, transform: `rotate(45 ${x(yy)} ${y(mu)})` }, layer);
+        c.addEventListener('pointerenter', e => showTip(`<b>${yy} · provisional</b>Mean PPI ${fmt(mu)} from ${v.length} countries (live World Bank data, no interval: coverage is partial)`, e.clientX, e.clientY));
+        c.addEventListener('pointerleave', hideTip);
+      });
+      leg.innerHTML = `<span><i style="background:${SAND}"></i>Mean PPI</span><span><i style="background:${SAND};opacity:.3"></i>95% bootstrap interval</span><span><i style="border-top:1px dashed ${MUTED};height:0"></i>Median</span>${LIVE_YEARS.length ? `<span><i style="border:1.5px solid ${SAGE};width:8px;height:8px;background:none"></i>Provisional (live)</span>` : ''}`;
+    }
+    function drawShare() {
+      layer.innerHTML = '';
+      const y = v => m.t + (1 - v) * (H - m.t - m.b);
+      axes(y, [0, .25, .5, .75, 1], v => Math.round(v * 100) + '%');
+      const S = AN.summary.filter(s => s.countries_profiled >= 150);
+      for (let k = 3; k >= 0; k--) {
+        const top = S.map(s => [x(s.year), y(K.slice(0, k + 1).reduce((a, c) => a + s['share_' + c], 0))]);
+        const bot = S.map(s => [x(s.year), y(K.slice(0, k).reduce((a, c) => a + s['share_' + c], 0))]).reverse();
+        const p = svgEl('path', { d: 'M' + top.join('L') + 'L' + bot.join('L') + 'Z', fill: CL[K[k]].color, 'fill-opacity': .85 }, layer);
+        p.addEventListener('pointermove', e => {
+          const bb = svg.getBoundingClientRect();
+          const yy = Math.round(Y0 + ((e.clientX - bb.left) / bb.width * W - m.l) / (W - m.l - m.r) * (YMAX - Y0)), s = SUM[yy];
+          if (s) showTip(`<b>${yy}</b>${K.map(c => `${c}: ${Math.round(s['share_' + c] * 100)}%`).join(' · ')}<br>${s.countries_profiled} countries profiled`, e.clientX, e.clientY);
+        });
+        p.addEventListener('pointerleave', hideTip);
+      }
+      leg.innerHTML = legendHTML() + '<span>Years with at least 150 profiled countries</span>';
+    }
+    document.querySelectorAll('#trendviz [data-t]').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#trendviz [data-t]').forEach(z => z.setAttribute('aria-pressed', String(z === b)));
+      b.dataset.t === 'ppi' ? drawPPI() : drawShare();
+    }));
+    onReveal(document.getElementById('trendviz'), drawPPI);
+  })();
+
+  // ---------- scatter by year
   (function scatter() {
     const svg = document.getElementById('scatter'); if (!svg) return;
     const W = 1100, H = 500, m = { l: 52, r: 18, t: 16, b: 42 };
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const x = v => m.l + v / 100 * (W - m.l - m.r), y = v => m.t + (1 - (v - 40) / (90 - 40)) * (H - m.t - m.b);
+    const x = v => m.l + (Math.max(-5, Math.min(105, v)) + 5) / 110 * (W - m.l - m.r);
+    const y = v => m.t + (1 - (Math.max(35, Math.min(90, v)) - 35) / 55) * (H - m.t - m.b);
     const ax = svgEl('g', { class: 'axis' }, svg);
-    for (let v = 0; v <= 100; v += 20) { svgEl('line', { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: 'rgba(29,31,26,.07)' }, ax); const t = svgEl('text', { x: x(v), y: H - m.b + 18, 'text-anchor': 'middle' }, ax); t.textContent = v; }
-    for (let v = 40; v <= 90; v += 10) { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: 'rgba(29,31,26,.07)' }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v; }
+    for (let v = 0; v <= 100; v += 20) { svgEl('line', { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: GRID }, ax); const t = svgEl('text', { x: x(v), y: H - m.b + 18, 'text-anchor': 'middle' }, ax); t.textContent = v; }
+    for (let v = 40; v <= 90; v += 10) { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v; }
     const xl = svgEl('text', { x: W - m.r, y: H - 6, 'text-anchor': 'end' }, ax); xl.textContent = 'PLANETARY PRESSURE INDEX →';
-    const yl = svgEl('text', { x: m.l, y: m.t - 2 }, ax); yl.textContent = 'LIFE EXPECTANCY (YEARS)';
-    const big = svgEl('text', { x: W - m.r - 6, y: m.t + 64, 'text-anchor': 'end', fill: 'rgba(29,31,26,.1)', 'font-family': 'Fraunces', 'font-size': 76 }, svg);
+    const yl = svgEl('text', { x: m.l + 6, y: m.t + 12 }, ax); yl.textContent = 'LIFE EXPECTANCY (YEARS)';
+    const big = svgEl('text', { x: W - m.r - 6, y: H - m.b - 14, 'text-anchor': 'end', fill: 'rgba(236,230,216,.08)', 'font-family': 'Fraunces', 'font-size': 120 }, svg);
+    const fitL = svgEl('line', { stroke: SAND, 'stroke-width': 1.5, 'stroke-dasharray': '6 5', opacity: .8 }, svg);
     const g = svgEl('g', {}, svg);
-    const isos = Object.keys(byIso).sort((a, b) => (byIso[b][P[0]]?.pop || 0) - (byIso[a][P[0]]?.pop || 0));
-    const nodes = {}; let cur = P[2], timer = null;
-    isos.forEach(iso => {
-      const c = svgEl('circle', { r: 0, cx: x(50), cy: y(65), 'fill-opacity': .82, stroke: '#fbf8f2', 'stroke-width': .8, tabindex: 0 }, g);
-      c.style.transition = 'cx 1.1s cubic-bezier(.2,.7,.1,1), cy 1.1s cubic-bezier(.2,.7,.1,1), r 1s, fill .8s';
-      const show = e => { const r = byIso[iso][cur]; if (r) showTip(tipFor(r, cur), e.clientX || c.getBoundingClientRect().x, e.clientY || c.getBoundingClientRect().y); };
+    const order = [...isos].sort((a, b) => (C[b].pop[yi(2000)] || 0) - (C[a].pop[yi(2000)] || 0));
+    const nodes = {};
+    let cur = Y0, timer = null;
+    const val = (iso, yy) => {
+      if (yy <= Y1) { const c = C[iso], i = yi(yy); return { ppi: c.ppi[i], le: c.le[i], pop: c.pop[i], cl: c.cl[i], prov: false }; }
+      const r = liveRow(iso, yy); return r ? { ppi: r.ppi, le: r.le, pop: r.pop, cl: r.profile, prov: true } : {};
+    };
+    order.forEach(iso => {
+      const c = svgEl('circle', { r: 0, cx: x(50), cy: y(65), 'fill-opacity': .85, stroke: '#0d0f0b', 'stroke-width': .8, tabindex: 0 }, g);
+      c.style.transition = 'cx .45s linear, cy .45s linear, r .45s, fill .45s';
+      const show = e => { const v = val(iso, cur); if (v.ppi == null) return; const bb = c.getBoundingClientRect(); showTip(`<b>${C[iso].n}</b>${cur}${v.prov ? ' · provisional' : ''} · ${v.cl ? v.cl + ' · ' + CL[v.cl].label : 'no profile'}<br>PPI ${fmt(v.ppi)} · life expectancy ${fmt(v.le)} years`, e.clientX || bb.x, e.clientY || bb.y); };
       c.addEventListener('pointerenter', show); c.addEventListener('focus', show); c.addEventListener('pointerleave', hideTip); c.addEventListener('blur', hideTip);
       nodes[iso] = c;
     });
-    const seg = document.getElementById('sc-periods');
-    seg.innerHTML = P.map(p => `<button aria-pressed="${p === cur}" data-p="${p}">${p}</button>`).join('');
-    seg.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { stop(); draw(b.dataset.p); } });
-    function draw(p) {
-      cur = p; big.textContent = p;
-      seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === p)));
-      for (const iso of isos) {
-        const r = byIso[iso][p], c = nodes[iso];
-        if (!r || r.ppi == null || r.life_exp == null) { c.setAttribute('r', 0); continue; }
-        c.setAttribute('cx', x(r.ppi)); c.setAttribute('cy', y(r.life_exp));
-        c.setAttribute('r', Math.max(2.5, Math.sqrt(r.pop || 0) / 1300));
-        c.setAttribute('fill', r.cl ? CL[r.cl].color : '#999');
+    const input = document.getElementById('sc-year'), out = document.getElementById('sc-out'), badge = document.getElementById('sc-r');
+    input.min = Y0; input.max = YMAX;
+    function draw(yy) {
+      cur = yy; input.value = yy; out.textContent = yy; big.textContent = yy;
+      const pts = [];
+      for (const iso of order) {
+        const v = val(iso, yy), c = nodes[iso];
+        if (v.ppi == null || v.le == null) { c.setAttribute('r', 0); continue; }
+        c.setAttribute('cx', x(v.ppi)); c.setAttribute('cy', y(v.le));
+        c.setAttribute('r', Math.max(2.5, Math.sqrt(v.pop || 0) / 1300));
+        c.setAttribute('fill', v.cl ? CL[v.cl].color : '#777');
+        c.setAttribute('fill-opacity', v.prov ? .35 : .85);
+        pts.push([v.ppi, v.le]);
+      }
+      const r = AN.correlations.find(z => z.year === yy && z.outcome.startsWith('Life expectancy'));
+      badge.innerHTML = r ? `r = ${fmt(r.r, 2)} · 95% CI ${fmt(r.ci_low, 2)} to ${fmt(r.ci_high, 2)} · n = ${r.n}${r.n < 150 ? ' · partial coverage' : ''}` : `provisional · n = ${pts.length}`;
+      if (pts.length > 2) {
+        const n = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+        const b = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0);
+        fitL.setAttribute('x1', x(0)); fitL.setAttribute('x2', x(100)); fitL.setAttribute('y1', y(my - b * mx)); fitL.setAttribute('y2', y(my + b * (100 - mx)));
       }
     }
     const play = document.getElementById('sc-play');
     function stop() { clearInterval(timer); timer = null; play.textContent = '▶'; }
-    function run() { let k = 0; draw(P[0]); play.textContent = '❚❚'; timer = setInterval(() => { k++; if (k >= P.length) return stop(); draw(P[k]); }, 1800); }
+    function run() { if (cur >= YMAX) cur = Y0 - 1; play.textContent = '❚❚'; timer = setInterval(() => { if (cur >= YMAX) return stop(); draw(cur + 1); }, 420); }
     play.addEventListener('click', () => (timer ? stop() : run()));
-    document.getElementById('sc-legend').innerHTML = legendHTML();
-    onReveal(document.getElementById('scatterviz'), () => (prefersReducedMotion ? draw(cur) : run()));
+    input.addEventListener('input', () => { stop(); draw(+input.value); });
+    document.getElementById('sc-legend').innerHTML = legendHTML() + `<span><i style="border-top:1px dashed ${SAND};height:0"></i>Least-squares line</span>`;
+    onReveal(document.getElementById('scatterviz'), () => { if (prefersReducedMotion) return draw(LASTFULL); draw(Y0); setTimeout(run, 700); });
   })();
 
-  // ---------- fingerprints (petal chart)
+  // ---------- correlation by year with Fisher-z band
+  (function corr() {
+    const svg = document.getElementById('corr'); if (!svg) return;
+    const outs = [...new Set(AN.correlations.map(c => c.outcome))];
+    const first = outs.find(o => o.startsWith('Life')) || outs[0];
+    const seg = document.getElementById('corr-seg');
+    seg.innerHTML = outs.map(o => `<button aria-pressed="${o === first}" data-o="${o}">${o.replace(/ \(.*\)/, '')}</button>`).join('');
+    const W = 1100, H = 320, m = { l: 48, r: 20, t: 16, b: 32 };
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const x = yy => m.l + (yy - Y0) / (Y1 - Y0) * (W - m.l - m.r), y = v => m.t + (1 - (v + 0.8) / 1.6) * (H - m.t - m.b);
+    const ax = svgEl('g', { class: 'axis' }, svg);
+    [-0.8, -0.4, 0, 0.4, 0.8].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? 'rgba(236,230,216,.35)' : GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
+    for (let yy = 1990; yy <= Y1; yy += 5) { const t = svgEl('text', { x: x(yy), y: H - 8, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
+    const layer = svgEl('g', {}, svg);
+    function draw(o) {
+      layer.innerHTML = '';
+      const S = AN.correlations.filter(c => c.outcome === o);
+      const up = S.map(s => [x(s.year), y(s.ci_high)]), dn = S.map(s => [x(s.year), y(s.ci_low)]).reverse();
+      svgEl('path', { d: 'M' + up.join('L') + 'L' + dn.join('L') + 'Z', fill: SAGE, 'fill-opacity': .15 }, layer);
+      const line = svgEl('path', { d: 'M' + S.map(s => [x(s.year), y(s.r)]).join('L'), fill: 'none', stroke: SAGE, 'stroke-width': 2.4, class: 'draw' }, layer);
+      line.style.setProperty('--len', line.getTotalLength()); requestAnimationFrame(() => requestAnimationFrame(() => { line.style.strokeDashoffset = 0; }));
+      S.forEach(s => {
+        const sig = s.p_value < 0.05;
+        const c = svgEl('circle', { cx: x(s.year), cy: y(s.r), r: 3.6, fill: sig ? SAGE : PANEL, stroke: SAGE, 'stroke-width': 1.4 }, layer);
+        c.addEventListener('pointerenter', e => showTip(`<b>${s.year} · ${o}</b>r = ${fmt(s.r, 3)} (95% CI ${fmt(s.ci_low, 2)} to ${fmt(s.ci_high, 2)})<br>p ${s.p_value < 0.001 ? '< 0.001' : '= ' + fmt(s.p_value, 3)} · n = ${s.n}`, e.clientX, e.clientY));
+        c.addEventListener('pointerleave', hideTip);
+      });
+      const n0 = S.find(s => s.year === FIRSTFULL), n1 = S.find(s => s.year === LASTFULL);
+      const chg = AN.tests.find(t => t.measure.startsWith(`change in r(PPI, ${o})`));
+      document.getElementById('corr-note').textContent = (n0 && n1 ? `${o}: r = ${fmt(n0.r, 2)} in ${n0.year} and ${fmt(n1.r, 2)} in ${n1.year}` : o) +
+        (chg ? ` (change ${fmt(chg.estimate, 2)}, 95% CI ${fmt(chg.ci_low, 2)} to ${fmt(chg.ci_high, 2)}, paired bootstrap)` : '') +
+        '. Filled points are significant at 5%; the band is the 95% Fisher-z interval for each year.';
+    }
+    seg.addEventListener('click', e => { const b = e.target.closest('[data-o]'); if (!b) return; seg.querySelectorAll('button').forEach(z => z.setAttribute('aria-pressed', String(z === b))); draw(b.dataset.o); });
+    onReveal(document.getElementById('corrviz'), () => draw(first));
+  })();
+
+  // ---------- fingerprints by year
   (function fingerprint() {
     const svg = document.getElementById('fp-svg'); if (!svg) return;
     const S = 460, c = S / 2, R = 172, r0 = 30;
     svg.setAttribute('viewBox', `-70 -10 ${S + 140} ${S + 20}`);
-    [25, 50, 75, 100].forEach(v => svgEl('circle', { cx: c, cy: c, r: r0 + (R - r0) * v / 100, fill: 'none', stroke: v === 50 ? 'rgba(29,31,26,.35)' : 'rgba(29,31,26,.1)', 'stroke-dasharray': v === 50 ? '3 4' : '' }, svg));
+    [25, 50, 75, 100].forEach(v => svgEl('circle', { cx: c, cy: c, r: r0 + (R - r0) * v / 100, fill: 'none', stroke: v === 50 ? 'rgba(236,230,216,.35)' : 'rgba(236,230,216,.1)', 'stroke-dasharray': v === 50 ? '3 4' : '' }, svg));
     const n = IND.length, ang = k => -Math.PI / 2 + k * 2 * Math.PI / n;
     IND.forEach(([, lab], k) => {
       const a = ang(k), lx = c + Math.cos(a) * (R + 22), ly = c + Math.sin(a) * (R + 22);
-      svgEl('line', { x1: c + Math.cos(a) * r0, y1: c + Math.sin(a) * r0, x2: c + Math.cos(a) * R, y2: c + Math.sin(a) * R, stroke: 'rgba(29,31,26,.1)' }, svg);
-      const t = svgEl('text', { x: lx, y: ly + 4, 'text-anchor': Math.abs(Math.cos(a)) < .2 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end', fill: '#55594f', 'font-family': 'Barlow', 'font-size': 11, 'font-weight': 600, 'letter-spacing': '.06em' }, svg);
+      svgEl('line', { x1: c + Math.cos(a) * r0, y1: c + Math.sin(a) * r0, x2: c + Math.cos(a) * R, y2: c + Math.sin(a) * R, stroke: 'rgba(236,230,216,.1)' }, svg);
+      const t = svgEl('text', { x: lx, y: ly + 4, 'text-anchor': Math.abs(Math.cos(a)) < .2 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end', fill: MUTED, 'font-family': 'Barlow', 'font-size': 11, 'font-weight': 600, 'letter-spacing': '.06em' }, svg);
       t.textContent = lab.replace(' per person', '').replace(' share', '').toUpperCase();
     });
-    const hub = svgEl('circle', { cx: c, cy: c, r: r0 + 2, fill: '#fbf8f2', stroke: 'rgba(29,31,26,.25)' }, svg);
-    const mid = svgEl('text', { x: c, y: c + 5, 'text-anchor': 'middle', fill: '#1d1f1a', 'font-family': 'Fraunces', 'font-size': 15 }, svg);
     const gB = svgEl('g', {}, svg), gA = svgEl('g', {}, svg);
+    const hub = svgEl('circle', { cx: c, cy: c, r: r0 + 2, fill: PANEL, stroke: 'rgba(236,230,216,.25)' }, svg);
+    const mid = svgEl('text', { x: c, y: c + 5, 'text-anchor': 'middle', fill: INK, 'font-family': 'Fraunces', 'font-size': 14 }, svg);
     const petal = (k, v) => {
       const a = ang(k), w = Math.PI / n * 0.82, rr = r0 + (R - r0) * v / 100;
       const p1 = [c + Math.cos(a - w) * r0, c + Math.sin(a - w) * r0], p2 = [c + Math.cos(a + w) * r0, c + Math.sin(a + w) * r0];
@@ -160,33 +265,40 @@
       const c1 = [c + Math.cos(a - w) * rr * 0.92, c + Math.sin(a - w) * rr * 0.92], c2 = [c + Math.cos(a + w) * rr * 0.92, c + Math.sin(a + w) * rr * 0.92];
       return `M${p1}Q${c1} ${tip}Q${c2} ${p2}Z`;
     };
-    const shapes = (g, fill, stroke, op) => IND.map((_, k) => { const p = svgEl('path', { d: petal(k, 0), fill, 'fill-opacity': op, stroke, 'stroke-width': 1.4 }, g); p.style.transition = 'd .9s cubic-bezier(.2,.7,.1,1)'; return p; });
-    const pa = shapes(gA, '#2f6b4f', '#1f4a36', .55), pb = shapes(gB, 'none', '#b5762a', 1);
+    const shapes = (g, fill, stroke, op) => IND.map((_, k) => { const p = svgEl('path', { d: petal(k, 0), fill, 'fill-opacity': op, stroke, 'stroke-width': 1.4 }, g); p.style.transition = 'd .7s cubic-bezier(.2,.7,.1,1)'; return p; });
+    const pa = shapes(gA, SAGE, '#cfe3d4', .55), pb = shapes(gB, 'none', '#d9a35a', 1);
     pb.forEach(p => p.setAttribute('stroke-dasharray', '4 3'));
-    const isos = Object.keys(pct).filter(i => byIso[i]).sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
-    const sa = document.getElementById('fp-a'), sb = document.getElementById('fp-b');
-    sa.innerHTML = isos.map(i => `<option value="${i}"${i === 'IND' ? ' selected' : ''}>${nameOf(i)}</option>`).join('');
-    sb.innerHTML = '<option value="">No comparison</option>' + isos.map(i => `<option value="${i}"${i === 'USA' ? ' selected' : ''}>${nameOf(i)}</option>`).join('');
-    const quick = ['IND', 'CHN', 'USA', 'BRA', 'DEU', 'NGA', 'SWE', 'QAT'];
+    const sa = document.getElementById('fp-a'), sb = document.getElementById('fp-b'), yr = document.getElementById('fp-year'), out = document.getElementById('fp-out');
+    // default: the latest year in which at least 150 countries report five or more of the six indicators
+    const FPY = Math.max(...YEARS.filter(y => Object.values(byYear[y] || {}).filter(r => IND.filter(([k]) => r[COL[k]] != null).length >= 5).length >= 150));
+    yr.min = Y0; yr.max = Y1; yr.value = FPY; out.textContent = FPY;
+    sa.innerHTML = isos.map(i => `<option value="${i}"${i === 'IND' ? ' selected' : ''}>${C[i].n}</option>`).join('');
+    sb.innerHTML = '<option value="">No comparison</option>' + isos.map(i => `<option value="${i}"${i === 'USA' ? ' selected' : ''}>${C[i].n}</option>`).join('');
     const qh = document.getElementById('fp-quick');
-    qh.innerHTML = quick.filter(i => pct[i]).map(i => `<button class="chip" data-i="${i}">${nameOf(i)}</button>`).join('');
+    qh.innerHTML = ['IND', 'CHN', 'USA', 'BRA', 'DEU', 'NGA', 'SWE', 'QAT'].filter(i => C[i]).map(i => `<button class="chip" data-i="${i}">${C[i].n}</button>`).join('');
     qh.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { sa.value = b.dataset.i; draw(); } });
     sa.addEventListener('change', draw); sb.addEventListener('change', draw);
+    let timer = null; const play = document.getElementById('fp-play');
+    function stop() { clearInterval(timer); timer = null; play.textContent = '▶'; }
+    yr.addEventListener('input', () => { stop(); draw(); });
+    play.addEventListener('click', () => { if (timer) return stop(); if (+yr.value >= Y1) yr.value = Y0; play.textContent = '❚❚'; timer = setInterval(() => { if (+yr.value >= Y1) return stop(); yr.value = +yr.value + 1; draw(); }, 600); });
     function draw() {
-      const a = sa.value, b = sb.value;
+      const y = +yr.value, a = sa.value, b = sb.value, pct = percentiles(y), rows = byYear[y] || {};
+      out.textContent = y;
       IND.forEach(([k], j) => {
         pa[j].setAttribute('d', petal(j, pct[a]?.[k] ?? 0));
+        pa[j].style.opacity = pct[a]?.[k] == null ? 0 : 1; // missing indicator: no petal, not a zero
         pb[j].setAttribute('d', petal(j, b ? (pct[b]?.[k] ?? 0) : 0));
-        pb[j].style.opacity = b ? 1 : 0;
+        pb[j].style.opacity = b && pct[b]?.[k] != null ? 1 : 0;
       });
-      const r = byIso[a] && byIso[a][P[2]];
-      mid.textContent = r && r.ppi != null ? `PPI ${r.ppi.toFixed(0)}` : '';
+      const ppi = C[a].ppi[yi(y)], cl = C[a].cl[yi(y)];
+      mid.textContent = ppi != null ? `PPI ${ppi.toFixed(0)}` : '';
       svg.appendChild(hub); svg.appendChild(mid);
-      document.getElementById('fp-name').textContent = nameOf(a);
-      document.getElementById('fp-meta').innerHTML = r ? `${r.region} · ${r.cl ? r.cl + ' · ' + CL[r.cl].label : 'not grouped'} · 2011–2023` : '2011–2023';
+      document.getElementById('fp-name').textContent = C[a].n;
+      document.getElementById('fp-meta').innerHTML = `${y} · ${cl ? cl + ' · ' + CL[cl].label : 'no profile'}${b ? ` · dashed: ${C[b].n}` : ''}`;
       document.getElementById('fp-list').innerHTML = IND.map(([k, lab, unit]) => {
-        const va = mean[a]?.[k], pa_ = pct[a]?.[k], vb = b ? mean[b]?.[k] : null;
-        return `<li><span><i style="background:#2f6b4f"></i>${lab}</span><b>${va == null ? 'n/a' : fmt(va, va >= 100 ? 0 : 1)} <small>${unit}</small></b><small>${pa_ == null ? '' : 'P' + Math.round(pa_)}${b && vb != null ? ' · ' + b + ' ' + fmt(vb, vb >= 100 ? 0 : 1) : ''}</small></li>`;
+        const va = rows[a]?.[COL[k]], p_ = pct[a]?.[k], vb = b ? rows[b]?.[COL[k]] : null;
+        return `<li><span><i style="background:${SAGE}"></i>${lab}</span><b>${va == null ? '<span class="muted">not reported</span>' : fmt(va, va >= 100 ? 0 : 1) + ` <small>${unit}</small>`}</b><small>${p_ == null ? '' : 'P' + Math.round(p_)}${b && vb != null ? ' · ' + b + ' ' + fmt(vb, vb >= 100 ? 0 : 1) : ''}</small></li>`;
       }).join('');
     }
     onReveal(document.getElementById('fpviz'), draw);
@@ -201,41 +313,39 @@
     ph.querySelectorAll('[data-reveal]').forEach(observeReveal);
   }
 
-  // ---------- alluvial
+  // ---------- alluvial (published period result)
   (function alluvial() {
     const svg = document.getElementById('alluvial'); if (!svg) return;
     const W = 1100, H = 460, m = { l: 20, r: 20, t: 30, b: 10 }, nw = 18, gap = 10;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const cols = P.map((_, k) => m.l + k * (W - m.l - m.r - nw) / (P.length - 1));
-    const A2 = X.assign, isos = Object.keys(A2);
-    const counts = P.map((_, k) => Object.fromEntries(K.map(c => [c, isos.filter(i => A2[i][k] === c).length])));
+    const A2 = X.assign, ids = Object.keys(A2);
+    const counts = P.map((_, k) => Object.fromEntries(K.map(c => [c, ids.filter(i => A2[i][k] === c).length])));
     const totalMax = Math.max(...counts.map(c => K.reduce((s, k) => s + c[k], 0)));
     const sc = (H - m.t - m.b - gap * 3) / totalMax;
     const pos = counts.map(cn => { let y0 = m.t; const o = {}; K.forEach(k => { o[k] = { y: y0, h: cn[k] * sc, out: y0, inn: y0 }; y0 += cn[k] * sc + gap; }); return o; });
     const flows = svgEl('g', {}, svg), nodesG = svgEl('g', {}, svg);
     for (let t = 0; t < P.length - 1; t++) {
       K.forEach(a => K.forEach(b => {
-        const n = isos.filter(i => A2[i][t] === a && A2[i][t + 1] === b).length; if (!n) return;
+        const n = ids.filter(i => A2[i][t] === a && A2[i][t + 1] === b).length; if (!n) return;
         const h = n * sc, x0 = cols[t] + nw, x1 = cols[t + 1], y0 = pos[t][a].out, y1 = pos[t + 1][b].inn;
         pos[t][a].out += h; pos[t + 1][b].inn += h;
         const mx = (x0 + x1) / 2;
         const d = `M${x0},${y0}C${mx},${y0} ${mx},${y1} ${x1},${y1}L${x1},${y1 + h}C${mx},${y1 + h} ${mx},${y0 + h} ${x0},${y0 + h}Z`;
-        const p = svgEl('path', { d, fill: CL[a === b ? a : b].color, 'fill-opacity': a === b ? .22 : .5 }, flows);
-        p.style.transition = 'fill-opacity .3s';
-        p.addEventListener('pointerenter', e => { p.setAttribute('fill-opacity', .85); showTip(`<b>${a} → ${b}</b>${P[t]} → ${P[t + 1]}<br>${n} ${n === 1 ? 'country' : 'countries'}`, e.clientX, e.clientY); });
-        p.addEventListener('pointerleave', () => { p.setAttribute('fill-opacity', a === b ? .22 : .5); hideTip(); });
+        const p = svgEl('path', { d, fill: CL[a === b ? a : b].color, 'fill-opacity': a === b ? .22 : .55 }, flows);
+        p.addEventListener('pointerenter', e => { p.setAttribute('fill-opacity', .9); showTip(`<b>${a} → ${b}</b>${P[t]} → ${P[t + 1]}<br>${n} ${n === 1 ? 'country' : 'countries'}`, e.clientX, e.clientY); });
+        p.addEventListener('pointerleave', () => { p.setAttribute('fill-opacity', a === b ? .22 : .55); hideTip(); });
       }));
     }
     P.forEach((p, t) => {
-      const lab = svgEl('text', { x: cols[t] + (t === 0 ? 0 : t === P.length - 1 ? nw : nw / 2), y: 18, 'text-anchor': t === 0 ? 'start' : t === P.length - 1 ? 'end' : 'middle', fill: '#1d1f1a', 'font-family': 'Fraunces', 'font-size': 17 }, nodesG); lab.textContent = p;
+      const lab = svgEl('text', { x: cols[t] + (t === 0 ? 0 : t === P.length - 1 ? nw : nw / 2), y: 18, 'text-anchor': t === 0 ? 'start' : t === P.length - 1 ? 'end' : 'middle', fill: INK, 'font-family': 'Fraunces', 'font-size': 17 }, nodesG); lab.textContent = p;
       K.forEach(k => {
         const o = pos[t][k];
         svgEl('rect', { x: cols[t], y: o.y, width: nw, height: Math.max(1, o.h), fill: CL[k].color }, nodesG);
-        if (o.h > 16) { const tx = svgEl('text', { x: t === P.length - 1 ? cols[t] - 6 : cols[t] + nw + 6, y: o.y + o.h / 2 + 4, 'text-anchor': t === P.length - 1 ? 'end' : 'start', fill: '#1d1f1a', 'font-family': 'Barlow', 'font-weight': 600, 'font-size': 12 }, nodesG); tx.textContent = `${k} · ${counts[t][k]}`; }
+        if (o.h > 16) { const tx = svgEl('text', { x: t === P.length - 1 ? cols[t] - 6 : cols[t] + nw + 6, y: o.y + o.h / 2 + 4, 'text-anchor': t === P.length - 1 ? 'end' : 'start', fill: INK, 'font-family': 'Barlow', 'font-weight': 600, 'font-size': 12 }, nodesG); tx.textContent = `${k} · ${counts[t][k]}`; }
       });
     });
-    const st = X.persistence.map(p => Math.round(p.stayed * 100) + '%').join(' and ');
-    document.getElementById('alluvial-note').textContent = `${st} stayed in the same profile in the two transitions`;
+    document.getElementById('alluvial-note').textContent = X.persistence.map(p => Math.round(p.stayed * 100) + '%').join(' and ') + ' stayed in the same profile';
     const clip = svgEl('clipPath', { id: 'alclip' }, svgEl('defs', {}, svg)); const cr = svgEl('rect', { x: 0, y: 0, width: 0, height: H }, clip);
     flows.setAttribute('clip-path', 'url(#alclip)');
     onReveal(document.getElementById('alluvial-viz'), () => {
@@ -246,80 +356,168 @@
     });
   })();
 
-  // ---------- associations (from regressions.csv)
+  // ---------- published period associations with Fisher-z intervals
   (function assoc() {
     const as = document.getElementById('assoc'); if (!as) return;
-    const outs = [...new Set(reg.map(r => r.outcome))];
-    const pal = ['#2f5f9e', '#1baf7a', '#1d1f1a', '#9a9d92', '#e34948', '#d49a2a'];
+    const reg = X.regressions, outs = [...new Set(reg.map(r => r.outcome))];
+    const pal = ['#8fb8ff', '#9cc7a4', '#ece6d8', '#a29f8c', '#ef7b6b', '#e2b45c'];
     const W = 640, H = 400, m = { l: 40, r: 210, t: 20, b: 30 };
     as.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const x = k => m.l + k / 2 * (W - m.l - m.r), y = v => m.t + (1 - (v + 0.5)) * (H - m.t - m.b);
+    const x = k => m.l + 20 + k / 2 * (W - m.l - m.r - 40), y = v => m.t + (1 - (v + 0.7) / 1.4) * (H - m.t - m.b);
     const ax = svgEl('g', { class: 'axis' }, as);
-    [-0.4, -0.2, 0, 0.2, 0.4].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? 'rgba(29,31,26,.35)' : 'rgba(29,31,26,.07)' }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
+    [-0.6, -0.3, 0, 0.3, 0.6].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? 'rgba(236,230,216,.35)' : GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
     P.forEach((p, k) => { const t = svgEl('text', { x: x(k), y: H - 8, 'text-anchor': 'middle' }, ax); t.textContent = p; });
+    const fisher = (r, n) => { const z = Math.atanh(r), se = 1 / Math.sqrt(n - 3); return [Math.tanh(z - 1.96 * se), Math.tanh(z + 1.96 * se)]; };
     const lab = [];
     outs.forEach((o, j) => {
       const rs = P.map(p => reg.find(r => r.outcome === o && r.period === p));
-      const p = svgEl('path', { d: 'M' + rs.map((r, k) => `${x(k)},${y(r.r)}`).join('L'), fill: 'none', stroke: pal[j], 'stroke-width': 2.4, class: 'draw' }, as);
-      p.style.setProperty('--len', 700);
+      const dx = (j - 2.5) * 5;
+      rs.forEach((r, k) => { const [lo, hi] = fisher(r.r, r.n); svgEl('line', { x1: x(k) + dx, x2: x(k) + dx, y1: y(lo), y2: y(hi), stroke: pal[j], 'stroke-opacity': .5, 'stroke-width': 2 }, as); });
+      svgEl('path', { d: 'M' + rs.map((r, k) => `${x(k) + dx},${y(r.r)}`).join('L'), fill: 'none', stroke: pal[j], 'stroke-width': 1.6, 'stroke-opacity': .8 }, as);
       rs.forEach((r, k) => {
-        const sig = r.p < 0.05;
-        const d = svgEl('circle', { cx: x(k), cy: y(r.r), r: 4.5, fill: sig ? pal[j] : '#fbf8f2', stroke: pal[j], 'stroke-width': 1.6 }, as);
-        d.addEventListener('pointerenter', e => showTip(`<b>${o}</b>${r.period}: r = ${r.r.toFixed(2)}, β = ${r.beta.toFixed(3)} (SE ${r.se.toFixed(3)})<br>p ${r.p < 0.0001 ? '< 0.0001' : '= ' + r.p.toFixed(4)} · n = ${r.n}`, e.clientX, e.clientY));
+        const d = svgEl('circle', { cx: x(k) + dx, cy: y(r.r), r: 4, fill: r.p < 0.05 ? pal[j] : PANEL, stroke: pal[j], 'stroke-width': 1.5 }, as);
+        const [lo, hi] = fisher(r.r, r.n);
+        d.addEventListener('pointerenter', e => showTip(`<b>${o}</b>${r.period}: r = ${r.r.toFixed(2)} (95% CI ${lo.toFixed(2)} to ${hi.toFixed(2)})<br>β = ${r.beta.toFixed(3)} (SE ${r.se.toFixed(3)}) · p ${r.p < 0.0001 ? '< 0.0001' : '= ' + r.p.toFixed(4)} · n = ${r.n}`, e.clientX, e.clientY));
         d.addEventListener('pointerleave', hideTip);
       });
       lab.push([y(rs[2].r), o, pal[j]]);
     });
     lab.sort((a, b) => a[0] - b[0]);
     for (let i = 1; i < lab.length; i++) if (lab[i][0] - lab[i - 1][0] < 15) lab[i][0] = lab[i - 1][0] + 15;
-    lab.forEach(([yy, o, c]) => { const t = svgEl('text', { x: x(2) + 12, y: yy + 4, fill: c, 'font-size': 12, 'font-family': 'Barlow', 'font-weight': 600 }, as); t.textContent = o; });
+    lab.forEach(([yy, o, c]) => { const t = svgEl('text', { x: x(2) + 20, y: yy + 4, fill: c, 'font-size': 12, 'font-family': 'Barlow', 'font-weight': 600 }, as); t.textContent = o; });
   })();
 
   // ---------- K diagnostics
   (function kchart() {
     const svg = document.getElementById('ksvg'); if (!svg) return;
-    const W = 520, H = 200, m = { l: 36, r: 12, t: 14, b: 26 };
+    const W = 520, H = 220, m = { l: 36, r: 12, t: 18, b: 26 };
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const ks = X.k, kmin = ks[0].k, kmax = ks[ks.length - 1].k, smax = Math.max(...ks.map(k => k.sil)) * 1.15;
-    const bw = (W - m.l - m.r) / ks.length;
+    const ks = X.k, smax = Math.max(...ks.map(k => k.sil)) * 1.15, bw = (W - m.l - m.r) / ks.length;
     const y = v => m.t + (1 - v / smax) * (H - m.t - m.b);
     const ax = svgEl('g', { class: 'axis' }, svg);
-    [0, 0.2, 0.4].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: 'rgba(29,31,26,.07)' }, ax); const t = svgEl('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
+    [0, 0.2, 0.4].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
     ks.forEach((k, i) => {
       const bx = m.l + i * bw + bw * 0.18;
-      const r = svgEl('rect', { x: bx, y: y(0), width: bw * 0.64, height: 0, fill: k.k === 4 ? '#2f6b4f' : '#cfc8b6' }, svg);
+      const r = svgEl('rect', { x: bx, y: y(0), width: bw * 0.64, height: 0, fill: k.k === 4 ? SAGE : '#3d4136' }, svg);
       r.style.transition = `all .9s cubic-bezier(.2,.7,.1,1) ${i * 0.07}s`; r.dataset.y = y(k.sil); r.dataset.h = y(0) - y(k.sil);
       const t = svgEl('text', { x: bx + bw * 0.32, y: H - 8, 'text-anchor': 'middle' }, ax); t.textContent = 'K=' + k.k;
-      const v = svgEl('text', { x: bx + bw * 0.32, y: y(k.sil) - 6, 'text-anchor': 'middle', fill: '#1d1f1a', 'font-size': 11, 'font-family': 'Barlow', 'font-weight': 600 }, svg); v.textContent = k.sil.toFixed(2);
+      const v = svgEl('text', { x: bx + bw * 0.32, y: y(k.sil) - 6, 'text-anchor': 'middle', fill: INK, 'font-size': 11, 'font-family': 'Barlow', 'font-weight': 600 }, svg); v.textContent = k.sil.toFixed(2);
     });
     onReveal(document.getElementById('kviz'), () => requestAnimationFrame(() => requestAnimationFrame(() => svg.querySelectorAll('rect').forEach(r => { r.setAttribute('y', r.dataset.y); r.setAttribute('height', r.dataset.h); }))));
   })();
 
-  // ---------- map
+  // ---------- map by year
   (async function map() {
     const svg = document.getElementById('map'); if (!svg) return;
     const world = await fetch('assets/world.json').then(r => r.json());
-    let cur = P[2], by = 'ppi', timer = null;
-    const stops = [[245, 236, 214], [222, 190, 120], [196, 120, 60], [140, 45, 40]];
+    const input = document.getElementById('map-year'), out = document.getElementById('map-out');
+    input.min = Y0; input.max = YMAX;
+    let cur = LASTFULL, by = 'ppi', timer = null;
+    const stops = [[35, 64, 74], [92, 140, 110], [226, 182, 92], [232, 96, 66]];
     const ramp = v => {
       const t = Math.max(0, Math.min(1, (v - 10) / 60)), s = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(s)), f = s - i;
       return `rgb(${stops[i].map((a, k) => Math.round(a + (stops[i + 1][k] - a) * f))})`;
     };
-    const m = WorldMap(svg, world, { include: iso => !!byIso[iso], tip: iso => { const r = byIso[iso] && byIso[iso][cur]; return r ? tipFor(r, cur) : null; } });
-    svg.querySelector('path').setAttribute('fill', '#1b1e19');
-    const leg = document.getElementById('map-legend');
+    const val = (iso, y) => {
+      if (!C[iso]) return null;
+      if (y <= Y1) return { ppi: C[iso].ppi[yi(y)], cl: C[iso].cl[yi(y)], prov: false };
+      const r = liveRow(iso, y); return r ? { ppi: r.ppi, cl: r.profile, prov: true } : null;
+    };
+    const mp = WorldMap(svg, world, {
+      include: iso => !!C[iso],
+      tip: iso => { const v = val(iso, cur); if (!C[iso]) return null; if (!v || v.ppi == null) return `<b>${C[iso].n}</b>${cur}: no PPI`; return `<b>${C[iso].n}</b>${cur}${v.prov ? ' · provisional' : ''}<br>PPI ${fmt(v.ppi)} · ${v.cl ? v.cl + ' · ' + CL[v.cl].label : 'no profile'}`; }
+    });
+    const leg = document.getElementById('map-legend'), note = document.getElementById('map-note');
     function paint() {
-      m.paint(iso => { const r = byIso[iso] && byIso[iso][cur]; if (!r) return null; return by === 'cl' ? (r.cl ? CL[r.cl].color : null) : (r.ppi == null ? null : ramp(r.ppi)); });
-      leg.innerHTML = by === 'cl' ? legendHTML() : `<span style="display:flex;align-items:center;gap:10px">PPI 10 <i style="width:180px;height:10px;background:linear-gradient(90deg,${[10, 30, 50, 70].map(ramp).join(',')})"></i> 70+</span><span>Grey: no data</span>`;
-      seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === cur)));
+      input.value = cur; out.textContent = cur;
+      let n = 0;
+      mp.paint(iso => { const v = val(iso, cur); if (!v) return null; const c = by === 'cl' ? (v.cl ? CL[v.cl].color : null) : (v.ppi == null ? null : ramp(v.ppi)); if (c) n++; return c; });
+      leg.innerHTML = by === 'cl' ? legendHTML() + '<span><i style="background:#1a1d22"></i>No data</span>' : `<span style="display:flex;align-items:center;gap:10px">PPI 10 <i style="width:180px;height:10px;background:linear-gradient(90deg,${[10, 30, 50, 70].map(ramp).join(',')})"></i> 70+</span><span><i style="background:#1a1d22"></i>No data</span>`;
+      note.textContent = `${cur}: ${n} countries shown${cur > Y1 ? ' · provisional values from the live World Bank feed' : SUM[cur] && SUM[cur].countries_with_ppi < 150 ? ' · partial coverage, compare with care' : ''}.`;
     }
-    const seg = document.getElementById('map-periods');
-    seg.innerHTML = P.map(p => `<button aria-pressed="${p === cur}" data-p="${p}">${p}</button>`).join('');
-    seg.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) { stop(); cur = b.dataset.p; paint(); } });
-    document.querySelectorAll('#mapviz [data-by]').forEach(b => b.addEventListener('click', () => { by = b.dataset.by; document.querySelectorAll('#mapviz [data-by]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); paint(); }));
+    document.querySelectorAll('#mapviz [data-by]').forEach(b => b.addEventListener('click', () => { by = b.dataset.by; document.querySelectorAll('#mapviz [data-by]').forEach(z => z.setAttribute('aria-pressed', String(z === b))); paint(); }));
     const play = document.getElementById('map-play');
     function stop() { clearInterval(timer); timer = null; play.textContent = '▶'; }
-    play.addEventListener('click', () => { if (timer) return stop(); let k = 0; cur = P[0]; paint(); play.textContent = '❚❚'; timer = setInterval(() => { k++; if (k >= P.length) return stop(); cur = P[k]; paint(); }, 1600); });
+    input.addEventListener('input', () => { stop(); cur = +input.value; paint(); });
+    play.addEventListener('click', () => { if (timer) return stop(); if (cur >= YMAX) cur = Y0 - 1; play.textContent = '❚❚'; timer = setInterval(() => { if (cur >= YMAX) return stop(); cur++; paint(); }, 450); });
     paint();
+  })();
+
+  // ---------- country by country
+  (function country() {
+    const sel = document.getElementById('c-country'); if (!sel) return;
+    sel.innerHTML = isos.map(i => `<option value="${i}"${i === 'IND' ? ' selected' : ''}>${C[i].n}</option>`).join('');
+    const qh = document.getElementById('c-quick');
+    qh.innerHTML = ['IND', 'CHN', 'USA', 'BRA', 'NGA', 'DEU', 'BGD', 'QAT'].filter(i => C[i]).map(i => `<button class="chip" data-i="${i}">${C[i].n}</button>`).join('');
+    qh.addEventListener('click', e => { const b = e.target.closest('[data-i]'); if (b) { sel.value = b.dataset.i; show(b.dataset.i); } });
+    sel.addEventListener('change', () => show(sel.value));
+    const PANELS = [
+      ['ppi', 'Planetary Pressure Index', '0–100', r => r.ppi],
+      ['le', 'Life expectancy', 'years', r => r.le],
+      ['gdp', 'GDP per person', 'US$, log scale', r => (r.gdp > 0 ? Math.log(r.gdp) : null)],
+      ['im', 'Infant mortality', 'per 1,000', null]
+    ];
+    function spark(host, c, iso, key, label, unit, liveVal) {
+      const W = 520, H = 170, m = { l: 52, r: 10, t: 14, b: 22 };
+      const vals = c[key], lv = [];
+      if (liveVal) LIVE_YEARS.forEach(y => { const r = liveRow(iso, y); const v = r ? liveVal(r) : null; if (v != null) lv.push([y, v]); });
+      const all = [...vals.filter(v => v != null), ...lv.map(p => p[1])];
+      const box = document.createElement('div'); box.className = 'pf-card';
+      const lastI = vals.map((v, i) => (v == null ? -1 : i)).reduce((a, b) => Math.max(a, b), -1);
+      const disp = v => (key === 'gdp' ? '$' + Math.round(Math.exp(v)).toLocaleString('en-US') : fmt(v, 1));
+      box.innerHTML = `<div class="pf-t"><span>${label} <small class="muted">· ${unit}</small></span><b>${lastI < 0 ? 'n/a' : disp(vals[lastI])}<small> ${lastI < 0 ? '' : Y0 + lastI}</small></b></div>`;
+      host.appendChild(box);
+      if (!all.length) { box.insertAdjacentHTML('beforeend', '<p class="muted small">No data</p>'); return; }
+      const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}` }, box);
+      let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
+      const x = y => m.l + (y - Y0) / (YMAX - Y0) * (W - m.l - m.r), y = v => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+      const ax = svgEl('g', { class: 'axis' }, svg);
+      [lo + pad, hi - pad].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = key === 'gdp' ? '$' + Math.round(Math.exp(v)).toLocaleString('en-US') : Math.round(v); });
+      [[Y0, 'start'], [YMAX, 'end']].forEach(([yy, a]) => { const t = svgEl('text', { x: x(yy), y: H - 4, 'text-anchor': a }, ax); t.textContent = yy; });
+      let d = '', pen = false;
+      vals.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + x(Y0 + i) + ',' + y(v); pen = true; });
+      svgEl('path', { d, fill: 'none', stroke: key === 'ppi' ? SAND : SAGE, 'stroke-width': 2 }, svg);
+      vals.forEach((v, i) => {
+        if (v == null) return;
+        const cl = c.cl[i];
+        const dot = svgEl('circle', { cx: x(Y0 + i), cy: y(v), r: 2.6, fill: key === 'ppi' && cl ? CL[cl].color : (key === 'ppi' ? SAND : SAGE) }, svg);
+        dot.addEventListener('pointerenter', e => showTip(`<b>${c.n} · ${Y0 + i}</b>${label}: ${disp(v)}${cl ? '<br>Profile ' + cl + ' · ' + CL[cl].label : ''}`, e.clientX, e.clientY));
+        dot.addEventListener('pointerleave', hideTip);
+      });
+      lv.forEach(([yy, v]) => { const dot = svgEl('circle', { cx: x(yy), cy: y(v), r: 3.4, fill: PANEL, stroke: SAGE, 'stroke-width': 1.5 }, svg); dot.addEventListener('pointerenter', e => showTip(`<b>${c.n} · ${yy} · provisional</b>${label}: ${disp(v)}`, e.clientX, e.clientY)); dot.addEventListener('pointerleave', hideTip); });
+    }
+    function show(iso) {
+      const c = C[iso];
+      document.getElementById('c-name').textContent = c.n;
+      const i = yi(LASTFULL), cl = c.cl[i];
+      document.getElementById('c-sub').textContent = `${fmt((c.pop[i] || 0) / 1e6, 1)} million people in ${LASTFULL} · PPI ${fmt(c.ppi[i])}`;
+      document.getElementById('c-status').innerHTML = cl ? `<span class="pill" style="border-color:${CL[cl].color};color:${CL[cl].color}">${LASTFULL} · ${cl} · ${CL[cl].label}</span>` : '';
+      const strip = document.getElementById('c-strip'); strip.innerHTML = ''; strip.style.gridTemplateColumns = `repeat(${YEARS.length},1fr)`;
+      YEARS.forEach((y, j) => { const s = document.createElement('span'); const k = c.cl[j]; s.style.background = k ? CL[k].color : '#1a1d22'; s.title = `${y}: ${k ? k + ' · ' + CL[k].label : 'no profile'}`; strip.appendChild(s); });
+      strip.insertAdjacentHTML('beforeend', `<em>${Y0}</em><em>${Y1}</em>`);
+      const grid = document.getElementById('c-grid'); grid.innerHTML = '';
+      PANELS.forEach(([k, l, u, lv]) => spark(grid, c, iso, k, l, u, lv));
+    }
+    show('IND');
+  })();
+
+  // ---------- live panel
+  (function live() {
+    const kv = document.getElementById('live-kv'); if (!kv) return;
+    if (!LIVE) {
+      kv.innerHTML = '<dt>Status</dt><dd>The live feed could not be reached just now. The thesis results above do not depend on it.</dd>';
+      return;
+    }
+    const d = new Date(LIVE.fetched.replace('Z', ':00Z'));
+    document.getElementById('live-when').textContent = isNaN(d) ? 'weekly' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const lu = Object.values(LIVE.last_updated || {}).filter(Boolean).sort().pop();
+    const cov = Object.entries(LIVE.coverage || {}).slice(-6).map(([y, n]) => `${y}: ${n}`).join(' · ');
+    const ag = LIVE.agreement_with_thesis;
+    kv.innerHTML = `<dt>Last fetched</dt><dd>${LIVE.fetched.replace('T', ' ')} (UTC)</dd>
+      <dt>Source</dt><dd>${LIVE.source}${lu ? ` · newest series updated ${lu}` : ''}</dd>
+      <dt>Countries with a provisional PPI</dt><dd>${cov || 'n/a'}</dd>
+      <dt>Agreement with thesis data</dt><dd>${ag ? `r = ${ag.r} over ${ag.pairs.toLocaleString('en-US')} country-years · mean absolute difference ${ag.mean_abs_diff} PPI points (data revisions)` : 'n/a'}</dd>
+      <dt>Years beyond the thesis</dt><dd>${LIVE_YEARS.length ? LIVE_YEARS.join(', ') + ' (hollow points in the charts)' : 'None yet: several pressure series are published two or more years late.'}</dd>
+      <dt>Rule</dt><dd>${LIVE.rule}</dd>`;
   })();
 })();

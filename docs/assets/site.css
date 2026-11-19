@@ -1,4 +1,5 @@
 /* Shared design system for the two study sites (dark, cinematic, uppercase display type). */
+html{scroll-padding-top:84px}
 @font-face{font-family:"Barlow";src:url(fonts/barlow-300.woff2) format("woff2");font-weight:300;font-display:swap}
 @font-face{font-family:"Barlow";src:url(fonts/barlow-400.woff2) format("woff2");font-weight:400;font-display:swap}
 @font-face{font-family:"Barlow";src:url(fonts/barlow-500.woff2) format("woff2");font-weight:500;font-display:swap}
@@ -53,11 +54,11 @@ strong{font-weight:600;color:#fff}
 /* ---------- nav ---------- */
 .nav{position:fixed;inset:0 0 auto;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:22px var(--gutter);
   transition:transform .45s var(--ease),background .3s;background:linear-gradient(#000c,#0000)}
-.nav.hide{transform:translateY(-110%)}
+
 .nav.solid{background:rgba(0,0,0,.82);backdrop-filter:blur(10px)}
 .brand{font:700 20px/1 "Barlow",sans-serif;letter-spacing:.45em;text-transform:uppercase;text-decoration:none;color:#fff}
 .brand small{display:block;font:500 9px/1 "Barlow",sans-serif;letter-spacing:.42em;color:var(--muted);margin-top:6px}
-.nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0}
+.nav ul{display:flex;gap:clamp(18px,1.9vw,28px);list-style:none;margin:0;padding:0}
 .nav ul a{font:600 12px/1 "Barlow",sans-serif;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;color:#fff;position:relative;padding:6px 0}
 .nav ul a::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:2px;background:#fff;transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
 .nav ul a:hover::after,.nav ul a[aria-current]::after{transform:none}
@@ -67,7 +68,7 @@ strong{font-weight:600;color:#fff}
 .nav.open .burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
 .nav.open .burger span:nth-child(2){opacity:0}
 .nav.open .burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-@media (max-width:960px){
+@media (max-width:1180px){
   .burger{display:block}
   .nav ul{position:fixed;inset:0 0 0 auto;width:min(340px,86vw);flex-direction:column;gap:0;background:#000;padding:96px 32px;transform:translateX(100%);visibility:hidden;transition:transform .45s var(--ease),visibility 0s .45s;border-left:1px solid var(--line)}
   .nav.open ul{visibility:visible;transition:transform .45s var(--ease)}
@@ -267,3 +268,25 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:#ffffff12;
 @media (max-width:900px){.pf-grid{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.pf-grid{grid-template-columns:1fr}.search input,.search select{min-width:0;width:100%}}
 @media (max-width:700px){.stats[style]{grid-template-columns:1fr!important}.stats[style] .stat{border-left:0;border-top:1px solid var(--line)}.stats[style] .stat:first-child{border-top:0}}
+
+/* latest-data panel (both sites; terra.css restyles) */
+.live-box{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:40px;border:1px solid var(--line);background:linear-gradient(135deg,#0b0f16,#05070a);padding:clamp(24px,4vw,48px)}
+.live-kv{grid-template-columns:auto 1fr;margin:0;font-size:14px;align-content:start}
+.live-kv dt{color:var(--dim);padding:8px 12px 8px 0;border-bottom:1px solid var(--line)}
+.live-kv dd{text-align:left;padding:8px 0;border-bottom:1px solid var(--line)}
+.lv-tests{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.lv-tests:empty{display:none}
+.lv-tests>p{background:var(--panel);margin:0;padding:18px}
+.lv-test{background:var(--panel);padding:20px 22px}
+.lv-test .k{font:600 11px/1.3 "Barlow",sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+.lv-test b{display:block;font:300 clamp(30px,3vw,42px)/1 "Barlow Condensed","Barlow",sans-serif;margin:12px 0 6px}
+.lv-test b small{font-size:.45em;color:var(--muted)}
+.lv-test .ci{display:block;font:500 13px "Barlow",sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.lv-tests .scroll-x{background:var(--panel);padding:8px 16px}
+.verdict{display:inline-block;margin-top:12px;padding:5px 10px;font:600 10px/1 "Barlow",sans-serif;letter-spacing:.18em;text-transform:uppercase;border:1px solid}
+.verdict.yes{color:#5fd1b0;border-color:#5fd1b066}
+.verdict.no{color:#ffb454;border-color:#ffb45466}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fd1b0;margin-right:10px;vertical-align:1px;box-shadow:0 0 0 0 #5fd1b0aa;animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 10px #5fd1b000}100%{box-shadow:0 0 0 0 #5fd1b000}}
+@media (max-width:860px){.live-box{grid-template-columns:1fr}.lv-tests{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}

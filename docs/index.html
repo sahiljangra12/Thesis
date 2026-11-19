@@ -6,7 +6,7 @@
 <title>Development. At What Planetary Cost? · SAHIL</title>
 <meta name="description" content="Planetary Boundary Transgressions and Divergent Socio-Economic Pathways: a world-level study of planetary pressure and development across 182 countries, 1990–2023. Undergraduate thesis by SAHIL, TISS Mumbai.">
 <meta name="author" content="SAHIL">
-<meta name="theme-color" content="#f3efe6">
+<meta name="theme-color" content="#0e100c">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Development. At what planetary cost?">
 <meta property="og:description" content="A world-level study of planetary pressure and development, 182 countries, 1990–2023.">
@@ -15,8 +15,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/fraunces-300.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/site.css?v=20261119">
-<link rel="stylesheet" href="assets/terra.css?v=20261119">
+<link rel="stylesheet" href="assets/site.css?v=20261119c">
+<link rel="stylesheet" href="assets/terra.css?v=20261119c">
 </head>
 <body>
 <a class="skip" href="#question">Skip to content</a>
@@ -31,6 +31,8 @@
       <li><a href="#fingerprint">Fingerprints</a></li>
       <li><a href="#pathways">Pathways</a></li>
       <li><a href="#map-sec">Map</a></li>
+      <li><a href="#countries">Countries</a></li>
+      <li><a href="#live">Live</a></li>
       <li><a href="#method">Method</a></li>
       <li><a href="explorer.html">Explorer</a></li>
     </ul>
@@ -93,32 +95,37 @@
   </div>
 </section>
 
-<!-- ============================== FINDINGS -->
+<!-- ============================== FINDINGS (year by year, with uncertainty) -->
 <section id="findings" class="band" aria-labelledby="f-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>03 · What the study finds</p>
-    <h2 class="h2" id="f-h" data-reveal>Better lives. <em>Persistent</em> pressure.</h2>
-    <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-top:40px" data-reveal>
-      <div class="stat"><b id="f-r">0.40 → 0.25</b><span>Correlation between pressure and life expectancy, 1990–2000 to 2011–2023. The link weakens.</span></div>
-      <div class="stat"><b id="f-ppi">35.2 · 35.0 · 35.6</b><span>Mean PPI in the three periods. Average pressure stays roughly flat.</span></div>
-      <div class="stat"><b id="f-sil">0.25</b><span>Silhouette score for four profiles: broad, overlapping patterns, not sharp categories.</span></div>
-    </div>
+    <p class="eyebrow" data-reveal>03 · What the evidence shows</p>
+    <h2 class="h2" id="f-h" data-reveal>Better lives. <em>Unchanged</em> pressure.</h2>
+    <p class="lead" data-reveal>Every country-year from 1990 to 2023 is placed on the thesis's pooled PPI scale, so the story can be followed year by year. Each claim below comes with its uncertainty, computed in the repository's analysis code.</p>
+    <div class="tests" id="tests" data-reveal></div>
 
-    <div class="viz" id="swarmviz" style="margin-top:72px">
-      <div class="viz-head"><span class="viz-title">Planetary Pressure Index by period · each dot is a country</span></div>
-      <svg id="swarm" aria-label="Beeswarm of PPI values by period, coloured by profile"></svg>
-      <div class="legend" id="swarm-legend"></div>
-      <p class="viz-note">The line marks each period's mean. The spread is wide and the centre barely moves.</p>
+    <div class="viz" id="trendviz" style="margin-top:56px">
+      <div class="viz-head"><span class="viz-title">Mean Planetary Pressure Index by year · 95% country bootstrap interval</span>
+        <div class="seg" role="group" aria-label="Show"><button aria-pressed="true" data-t="ppi">Pressure</button><button aria-pressed="false" data-t="share">Profiles</button></div></div>
+      <svg id="trend" aria-label="Annual mean PPI with confidence band"></svg>
+      <div class="legend" id="trend-legend"></div>
+      <p class="viz-note" id="trend-note"></p>
     </div>
 
     <div class="viz" id="scatterviz" style="margin-top:28px">
       <div class="viz-head">
-        <span class="viz-title">Pressure and life expectancy</span>
-        <div class="controls"><button class="play" id="sc-play" aria-label="Play periods">▶</button><div class="seg" role="group" aria-label="Period" id="sc-periods"></div></div>
+        <div class="range"><button class="play" id="sc-play" aria-label="Play years">▶</button><input type="range" id="sc-year" min="1990" max="2023" value="1990" aria-label="Year"><output id="sc-out">1990</output></div>
+        <span class="pill" id="sc-r"></span>
       </div>
-      <svg id="scatter" aria-label="Scatter of PPI against life expectancy by period"></svg>
+      <svg id="scatter" aria-label="Scatter of PPI against life expectancy by year"></svg>
       <div class="legend" id="sc-legend"></div>
-      <p class="viz-note">Circles are sized by population and coloured by profile in that period.</p>
+      <p class="viz-note">Each circle is a country, sized by population and coloured by its nearest published profile in that year. The badge shows the Pearson correlation with its 95% Fisher-z interval and the number of countries.</p>
+    </div>
+
+    <div class="viz" id="corrviz" style="margin-top:28px">
+      <div class="viz-head"><span class="viz-title">Correlation with the PPI, year by year · 95% intervals</span>
+        <div class="seg" role="group" aria-label="Outcome" id="corr-seg"></div></div>
+      <svg id="corr" aria-label="Annual correlation between PPI and the selected outcome with confidence band"></svg>
+      <p class="viz-note" id="corr-note"></p>
     </div>
   </div>
 </section>
@@ -128,7 +135,7 @@
   <div class="wrap">
     <p class="eyebrow" data-reveal>04 · Pressure fingerprints</p>
     <h2 class="h2" id="fp-h" data-reveal>Every country presses <em>differently</em></h2>
-    <p class="lead" data-reveal>Each petal is one indicator, scaled to the country's percentile among all countries in 2011–2023: a longer petal means more pressure than most. Compare any two countries.</p>
+    <p class="lead" data-reveal>Each petal is one indicator, scaled to the country's percentile among all countries in the chosen year: a longer petal means more pressure than most. Indicators a country did not report that year are left blank rather than drawn as zero. Recent years are thinner because several series are published two or more years late.</p>
     <div class="viz" id="fpviz">
       <div class="viz-head">
         <div class="controls">
@@ -136,8 +143,9 @@
           <span class="muted small">vs</span>
           <label class="search"><span class="sr">Compare with</span><select id="fp-b" aria-label="Compare with"></select></label>
         </div>
-        <div class="chips" id="fp-quick"></div>
+        <div class="range" style="max-width:360px"><button class="play" id="fp-play" aria-label="Play years">▶</button><input type="range" id="fp-year" min="1990" max="2022" value="2022" aria-label="Year"><output id="fp-out">2022</output></div>
       </div>
+      <div class="chips" id="fp-quick"></div>
       <div class="fp">
         <svg id="fp-svg" aria-label="Petal chart of pressure percentiles"></svg>
         <div class="fp-side"><h3 id="fp-name">India</h3><p class="meta" id="fp-meta"></p><ul class="fp-list" id="fp-list"></ul></div>
@@ -152,7 +160,7 @@
   <div class="inner"><div>
     <p class="eyebrow" data-reveal>05 · The pattern</p>
     <p class="quote" data-reveal>Development improves. <em>Pressure does not disappear.</em></p>
-    <p class="lead" data-reveal style="--d:.15s;margin-top:22px">More developed profiles have longer lives, higher incomes and more urbanisation, alongside higher pressure. A weaker link is not evidence that development has become independent of it.</p>
+    <p class="lead" data-reveal style="--d:.15s;margin-top:22px">Life expectancy rose in almost every country while the average pressure index did not move. Development has not, on this evidence, become independent of environmental pressure.</p>
   </div></div>
 </section>
 
@@ -164,34 +172,58 @@
     <div class="cards" id="profiles" style="margin-top:32px"></div>
 
     <div class="viz" id="alluvial-viz" style="margin-top:56px">
-      <div class="viz-head"><span class="viz-title">Where countries moved between profiles</span><span class="muted small" id="alluvial-note"></span></div>
+      <div class="viz-head"><span class="viz-title">Published period result · where countries moved between profiles</span><span class="muted small" id="alluvial-note"></span></div>
       <svg id="alluvial" aria-label="Alluvial diagram of profile changes across the three periods"></svg>
-      <p class="viz-note">Bands show countries grouped in consecutive periods. Hover a band for its count. Moves record changes in model-assigned profile, not verified gains or losses in sustainability.</p>
+      <p class="viz-note">The profiles were estimated on decade averages; the year-by-year shares above use the same centres. Moves record changes in model-assigned profile, not verified gains or losses in sustainability.</p>
     </div>
 
     <div class="split" style="margin-top:72px">
-      <div class="viz" id="assocviz"><div class="viz-head"><span class="viz-title">Correlation with the PPI, by period</span></div><svg id="assoc" aria-label="Correlation of six outcomes with the PPI"></svg><p class="viz-note">Bivariate OLS of each outcome on the PPI. Filled points are significant at 5%.</p></div>
-      <div data-reveal>
-        <h3 class="h2" style="font-size:clamp(28px,3.2vw,44px)">The associations <em>weaken</em></h3>
-        <p class="muted">Income, life expectancy and urbanisation are positively associated with pressure in every period, and infant mortality negatively. Female labour-force participation is negatively associated; unemployment shows no significant association in any period.</p>
-        <div class="viz" id="kviz" style="margin-top:24px"><div class="viz-head"><span class="viz-title">How many profiles? Silhouette by K</span></div><svg id="ksvg" aria-label="Silhouette score by number of clusters"></svg><p class="viz-note">Two groups separate more cleanly (higher score), but four keep useful development tiers. The thesis uses K = 4 and treats the profiles as a typology.</p></div>
-      </div>
+      <div class="viz" id="kviz"><div class="viz-head"><span class="viz-title">How many profiles? Silhouette by K</span></div><svg id="ksvg" aria-label="Silhouette score by number of clusters"></svg><p class="viz-note">Two groups separate more cleanly, but four keep useful development tiers. The thesis uses K = 4 and treats the profiles as a typology.</p></div>
+      <div class="viz" id="assocviz"><div class="viz-head"><span class="viz-title">Published period associations with the PPI</span></div><svg id="assoc" aria-label="Correlation of six outcomes with the PPI by period"></svg><p class="viz-note">Bivariate OLS of each outcome on the PPI. Filled points are significant at 5%; bars are 95% Fisher-z intervals.</p></div>
     </div>
   </div>
 </section>
 
 <!-- ============================== MAP -->
-<section id="map-sec" class="band ink" aria-labelledby="w-h">
+<section id="map-sec" class="band" aria-labelledby="w-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal style="color:#d9c9a3">07 · The map</p>
-    <h2 class="h2" id="w-h" data-reveal>Profiles and pressure, <em>period by period</em></h2>
+    <p class="eyebrow" data-reveal>07 · The map, year by year</p>
+    <h2 class="h2" id="w-h" data-reveal>Profiles and pressure, <em>1990 to 2023</em></h2>
     <div class="viz" id="mapviz">
       <div class="viz-head">
-        <div class="controls"><button class="play" id="map-play" aria-label="Play periods" style="color:#fff">▶</button><div class="seg" role="group" aria-label="Period" id="map-periods"></div></div>
-        <div class="seg" role="group" aria-label="Colour by"><button aria-pressed="false" data-by="cl">Profile</button><button aria-pressed="true" data-by="ppi">Pressure index</button></div>
+        <div class="range"><button class="play" id="map-play" aria-label="Play years">▶</button><input type="range" id="map-year" min="1990" max="2023" value="2022" aria-label="Year"><output id="map-out">2022</output></div>
+        <div class="seg" role="group" aria-label="Colour by"><button aria-pressed="true" data-by="ppi">Pressure index</button><button aria-pressed="false" data-by="cl">Profile</button></div>
       </div>
       <svg id="map" aria-label="World map"></svg>
       <div class="legend" id="map-legend"></div>
+      <p class="viz-note" id="map-note"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== COUNTRY -->
+<section id="countries" class="band" style="padding-top:0" aria-labelledby="c-h">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal>08 · Country by country</p>
+    <h2 class="h2" id="c-h" data-reveal>One country, <em>every year</em></h2>
+    <div class="viz" id="cviz">
+      <div class="viz-head"><label class="search"><span class="sr">Country</span><select id="c-country" aria-label="Country"></select></label><div class="chips" id="c-quick"></div></div>
+      <div class="pf-head"><div><b id="c-name">India</b><span id="c-sub"></span></div><div id="c-status"></div></div>
+      <div class="pf-strip" id="c-strip" aria-label="Profile by year"></div>
+      <div class="pf-grid" id="c-grid" style="grid-template-columns:repeat(2,1fr)"></div>
+      <p class="viz-note">Solid points: thesis data. Hollow points: provisional values from the live World Bank feed for years after 2023, on the same scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== LIVE -->
+<section id="live" class="band" style="padding-top:0" aria-labelledby="l-h">
+  <div class="wrap">
+    <div class="live-box" data-reveal>
+      <div><p class="eyebrow"><span class="pulse"></span>09 · Latest data</p>
+      <h2 class="h2" id="l-h" style="font-size:clamp(28px,3.2vw,44px)">Updated <em id="live-when">weekly</em></h2>
+      <p class="muted" id="live-text">A scheduled job fetches the newest World Bank values every Monday and places new years on the published scale, without re-estimating anything.</p></div>
+      <dl class="kv live-kv" id="live-kv"></dl>
     </div>
   </div>
 </section>
@@ -207,12 +239,14 @@
         <li><div><h3>Group comparable profiles</h3><p>One k-means model on all country-periods using PPI, log GDP per person, life expectancy, infant mortality and urbanisation, with K = 4.</p></div></li>
         <li><div><h3>Track transitions</h3><p>The same model assigns profiles in each period, so moves can be counted for countries grouped in both periods.</p></div></li>
         <li><div><h3>Examine associations</h3><p>Separate bivariate least-squares regressions of each outcome on the PPI, period by period.</p></div></li>
+        <li><div><h3>Follow it year by year</h3><p>Every country-year is placed on the same pooled scale and assigned to the nearest published profile centre. Averages of the annual values reproduce the period PPI closely (see the agreement check). Mean PPI intervals resample countries (2,000 draws); correlation intervals use Fisher's z; trends use country fixed effects with country-clustered standard errors.</p></div></li>
       </ol>
       <ul class="steps" data-reveal style="--d:.1s">
         <li><div><h3>Associations, not causes</h3><p>The analysis identifies cross-country patterns. It does not show that pressure causes better living conditions, or that reducing pressure lowers development.</p></div></li>
         <li><div><h3>A proxy, not a boundary</h3><p>The PPI is relative to this sample, not a direct measurement of the nine planetary boundaries. A flat mean does not mean total global pressure is unchanged.</p></div></li>
         <li><div><h3>Profiles are a typology</h3><p>Assignments depend on the features, scaling and K; a silhouette of 0.25 means the groups overlap.</p></div></li>
-        <li><div><h3>Many tests</h3><p>Eighteen regressions are reported without multiple-comparison adjustment; significance alone does not show practical importance.</p></div></li>
+        <li><div><h3>Many tests</h3><p>Eighteen period regressions and the yearly correlations are reported without multiple-comparison adjustment; significance alone does not show practical importance.</p></div></li>
+        <li><div><h3>Uneven recent coverage</h3><p>2023 has far fewer countries with complete pressure data, so its estimates are flagged and wider. Live values after 2023 are provisional and revise as sources update.</p></div></li>
       </ul>
     </div>
     <p class="viz-note" style="margin-top:28px">Sources: World Bank World Development Indicators, FAOSTAT, WHO Global Health Observatory, ILOSTAT and UNDP Human Development Reports. The original thesis analysis is preserved on the <code>v1.0-thesis</code> branch; version 2.0 corrections are documented in the repository.</p>
@@ -263,12 +297,12 @@
 
 <dialog class="lightbox" aria-label="Figure"><button aria-label="Close">×</button><img alt=""><p></p></dialog>
 
-<script src="thesis-data.js?v=20261119"></script>
+<script src="thesis-data.js?v=20261119c"></script>
 <script src="assets/vendor/d3-array.min.js"></script>
 <script src="assets/vendor/d3-geo.min.js"></script>
 <script src="assets/vendor/topojson-client.min.js"></script>
-<script src="assets/site.js?v=20261119"></script>
-<script src="assets/map.js?v=20261119"></script>
-<script src="assets/thesis.js?v=20261119"></script>
+<script src="assets/site.js?v=20261119c"></script>
+<script src="assets/map.js?v=20261119c"></script>
+<script src="assets/thesis.js?v=20261119c"></script>
 </body>
 </html>

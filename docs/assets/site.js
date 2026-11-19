@@ -2,14 +2,13 @@
 (function () {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ---------- nav: hide on scroll down, show on scroll up; mobile menu ----------
+  // ---------- nav: always fixed at the top; solid once scrolled; mobile menu ----------
   const nav = document.querySelector('.nav');
   if (nav) {
     let last = scrollY;
     addEventListener('scroll', () => {
       const y = scrollY;
       nav.classList.toggle('solid', y > 40);
-      if (!nav.classList.contains('open')) nav.classList.toggle('hide', y > last && y > 300);
       last = y;
     }, { passive: true });
     const b = nav.querySelector('.burger');
