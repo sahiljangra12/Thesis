@@ -68,7 +68,7 @@ strong{font-weight:600;color:#fff}
 .nav.open .burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
 .nav.open .burger span:nth-child(2){opacity:0}
 .nav.open .burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-@media (max-width:1180px){
+@media (max-width:1380px){
   .burger{display:block}
   .nav ul{position:fixed;inset:0 0 0 auto;width:min(340px,86vw);flex-direction:column;gap:0;background:#000;padding:96px 32px;transform:translateX(100%);visibility:hidden;transition:transform .45s var(--ease),visibility 0s .45s;border-left:1px solid var(--line)}
   .nav.open ul{visibility:visible;transition:transform .45s var(--ease)}
@@ -398,3 +398,13 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:#ffffff12;
   .svgwrap>svg{min-width:860px}
   .svgwrap::after{content:"Swipe to see the whole chart →";display:block;font:500 10px var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;padding-top:8px;position:sticky;left:0}
 }
+
+/* project brand: mark + name + tagline */
+.brand{display:inline-flex;align-items:center;gap:12px;letter-spacing:0;text-transform:none}
+.brand .mark{width:36px;height:36px;flex:none;transition:transform .8s var(--ease)}
+.brand:hover .mark{transform:rotate(60deg)}
+.brand .bt{display:flex;flex-direction:column;gap:5px}
+.brand .bt b{font:700 19px/1 "Barlow Condensed","Barlow",sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#fff;white-space:nowrap}
+.brand .bt small{display:block;margin:0;font:500 9.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+@media (max-width:420px){.brand .bt small{display:none}.brand .bt b{font-size:17px}}
+.nav ul a{white-space:nowrap}
