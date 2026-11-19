@@ -17,7 +17,7 @@ window.GLOSSARY = {
 };
 (async function () {
   if (typeof THESIS === 'undefined') return;
-  const V = '20261119d';
+  const V = '20261119f';
   const [X, AN] = await Promise.all([
     fetch(`data/thesis-extra.json?v=${V}`).then(r => r.json()),
     fetch(`data/thesis_annual.json?v=${V}`).then(r => r.json())
@@ -101,7 +101,7 @@ window.GLOSSARY = {
   // ---------- pressure over time (mean + bootstrap band) / profile shares
   (function trend() {
     const svg = document.getElementById('trend'); if (!svg) return;
-    const W = 1100, H = 380, m = { l: 48, r: 20, t: 18, b: 34 };
+    const W = MOB ? 600 : 1100, H = MOB ? 440 : 380, m = MOB ? { l: 44, r: 16, t: 18, b: 38 } : { l: 48, r: 20, t: 18, b: 34 };
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const x = y => m.l + (y - Y0) / (YMAX - Y0) * (W - m.l - m.r);
     const layer = svgEl('g', {}, svg);
@@ -127,7 +127,7 @@ window.GLOSSARY = {
     function axes(y, ticks, fmtT) {
       const ax = svgEl('g', { class: 'axis' }, layer);
       ticks.forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = fmtT(v); });
-      for (let yy = 1990; yy <= YMAX; yy += 5) { const t = svgEl('text', { x: x(yy), y: H - 10, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
+      for (let yy = 1990; yy <= YMAX; yy += MOB ? 10 : 5) { const t = svgEl('text', { x: x(yy), y: H - 10, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
     }
     function drawPPI() {
       layer.innerHTML = '';
@@ -142,7 +142,7 @@ window.GLOSSARY = {
       svgEl('path', { d: 'M' + S.map(s => [x(s.year), y(s.median_ppi)]).join('L'), fill: 'none', stroke: MUTED, 'stroke-width': 1.2, 'stroke-dasharray': '3 4' }, layer);
       S.forEach(s => {
         const full = s.countries_with_ppi >= 150;
-        const c = svgEl('circle', { cx: x(s.year), cy: y(s.mean_ppi), r: 4, fill: full ? SAND : PANEL, stroke: SAND, 'stroke-width': 1.5 }, layer);
+        const c = svgEl('circle', { cx: x(s.year), cy: y(s.mean_ppi), r: MOB ? 5 : 4, fill: full ? SAND : PANEL, stroke: SAND, 'stroke-width': 1.5 }, layer);
         c.addEventListener('pointerenter', e => { setYear(s); showTip(`<b>${s.year}</b>Mean PPI ${fmt(s.mean_ppi)} (95% CI ${fmt(s.ci_low)}–${fmt(s.ci_high)})<br>Median ${fmt(s.median_ppi)} · ${s.countries_with_ppi} countries${full ? '' : '<br>Partial coverage: compare with care'}`, e.clientX, e.clientY); });
         c.addEventListener('pointerleave', () => { hideTip(); setYear(SUM[LASTFULL]); });
       });
@@ -196,7 +196,7 @@ window.GLOSSARY = {
   // ---------- scatter by year
   (function scatter() {
     const svg = document.getElementById('scatter'); if (!svg) return;
-    const W = 1100, H = 500, m = { l: 52, r: 18, t: 16, b: 42 };
+    const W = MOB ? 600 : 1100, H = MOB ? 620 : 500, m = MOB ? { l: 44, r: 12, t: 52, b: 48 } : { l: 52, r: 18, t: 16, b: 42 };
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const x = v => m.l + (Math.max(-5, Math.min(105, v)) + 5) / 110 * (W - m.l - m.r);
     const y = v => m.t + (1 - (Math.max(35, Math.min(90, v)) - 35) / 55) * (H - m.t - m.b);
@@ -204,8 +204,8 @@ window.GLOSSARY = {
     for (let v = 0; v <= 100; v += 20) { svgEl('line', { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: GRID }, ax); const t = svgEl('text', { x: x(v), y: H - m.b + 18, 'text-anchor': 'middle' }, ax); t.textContent = v; }
     for (let v = 40; v <= 90; v += 10) { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v; }
     const xl = svgEl('text', { x: W - m.r, y: H - 6, 'text-anchor': 'end' }, ax); xl.textContent = 'PLANETARY PRESSURE INDEX →';
-    const yl = svgEl('text', { x: m.l + 6, y: m.t + 12 }, ax); yl.textContent = 'LIFE EXPECTANCY (YEARS)';
-    const big = svgEl('text', { x: W - m.r - 6, y: H - m.b - 14, 'text-anchor': 'end', fill: 'rgba(236,230,216,.08)', 'font-family': 'Fraunces', 'font-size': 120 }, svg);
+    const yl = svgEl('text', { x: MOB ? 4 : m.l + 6, y: MOB ? 18 : m.t + 12 }, ax); yl.textContent = MOB ? '↑ LIFE EXPECTANCY (YEARS)' : 'LIFE EXPECTANCY (YEARS)';
+    const big = svgEl('text', { class: 'big', x: W - m.r - 6, y: H - m.b - 14, 'text-anchor': 'end', fill: 'rgba(236,230,216,.08)', 'font-family': 'Fraunces', 'font-size': MOB ? 84 : 120 }, svg);
     svgEl('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, svgEl('clipPath', { id: 'scclip' }, svgEl('defs', {}, svg)));
     const fitL = svgEl('line', { stroke: SAND, 'stroke-width': 1.5, 'stroke-dasharray': '6 5', opacity: .8, 'clip-path': 'url(#scclip)' }, svg);
     const g = svgEl('g', {}, svg);
@@ -223,7 +223,8 @@ window.GLOSSARY = {
       c.addEventListener('pointerenter', show); c.addEventListener('focus', show); c.addEventListener('pointerleave', hideTip); c.addEventListener('blur', hideTip);
       nodes[iso] = c;
     });
-    const input = document.getElementById('sc-year'), out = document.getElementById('sc-out'), badge = document.getElementById('sc-r');
+    const input = document.getElementById('sc-year'), out = document.getElementById('sc-out'), badge = document.createElement('span'); // r now shown in the readout
+    document.getElementById('sc-r')?.remove();
     input.min = Y0; input.max = YMAX;
     const viz = document.getElementById('scatterviz');
     Explain.guide(viz, [
@@ -232,7 +233,7 @@ window.GLOSSARY = {
       'The dashed line is the <strong>average trend</strong>; r measures how tightly countries follow it (0 = no link, 1 = perfect).'
     ]);
     const RO = Explain.readout(viz), TK = Explain.takeaway(viz);
-    const named = ['CHN', 'IND', 'USA', 'NGA', 'BRA', 'SWE', 'QAT'].filter(i => C[i]);
+    const named = (MOB ? ['CHN', 'IND', 'USA', 'NGA'] : ['CHN', 'IND', 'USA', 'NGA', 'BRA', 'SWE', 'QAT']).filter(i => C[i]);
     const tags = Object.fromEntries(named.map(i => { const t = svgEl('text', { 'font-family': 'IBM Plex Mono', 'font-size': 11, 'font-weight': 500, fill: INK, 'paint-order': 'stroke', stroke: '#0d0f0b', 'stroke-width': 3, opacity: 0 }, svg); t.textContent = C[i].n.toUpperCase(); return [i, t]; }));
     function draw(yy) {
       cur = yy; input.value = yy; out.textContent = yy; big.textContent = yy;
@@ -241,13 +242,12 @@ window.GLOSSARY = {
         const v = val(iso, yy), c = nodes[iso];
         if (v.ppi == null || v.le == null) { c.setAttribute('r', 0); continue; }
         c.setAttribute('cx', x(v.ppi)); c.setAttribute('cy', y(v.le));
-        c.setAttribute('r', Math.max(2.5, Math.sqrt(v.pop || 0) / 1300));
+        c.setAttribute('r', Math.max(MOB ? 3.5 : 2.5, Math.sqrt(v.pop || 0) / (MOB ? 1700 : 1300)));
         c.setAttribute('fill', v.cl ? CL[v.cl].color : '#777');
         c.setAttribute('fill-opacity', v.prov ? .35 : .85);
         pts.push([v.ppi, v.le]);
       }
       const r = AN.correlations.find(z => z.year === yy && z.outcome.startsWith('Life expectancy'));
-      badge.hidden = true;
       badge.innerHTML = r ? `r = ${fmt(r.r, 2)} · 95% CI ${fmt(r.ci_low, 2)} to ${fmt(r.ci_high, 2)} · n = ${r.n}${r.n < 150 ? ' · partial coverage' : ''}` : `provisional · n = ${pts.length}`;
       let b = null;
       if (pts.length > 2) {
@@ -258,7 +258,7 @@ window.GLOSSARY = {
       for (const i of named) {
         const v = val(i, yy), t = tags[i];
         if (v.ppi == null || v.le == null) { t.setAttribute('opacity', 0); continue; }
-        const rr = Math.max(2.5, Math.sqrt(v.pop || 0) / 1300);
+        const rr = Math.max(MOB ? 3.5 : 2.5, Math.sqrt(v.pop || 0) / (MOB ? 1700 : 1300));
         t.setAttribute('x', x(v.ppi) + rr + 4); t.setAttribute('y', y(v.le) - rr * 0.6); t.setAttribute('opacity', .95);
       }
       const sg = r ? r.p_value < 0.05 : null;
@@ -288,12 +288,12 @@ window.GLOSSARY = {
     const first = outs.find(o => o.startsWith('Life')) || outs[0];
     const seg = document.getElementById('corr-seg');
     seg.innerHTML = outs.map(o => `<button aria-pressed="${o === first}" data-o="${o}">${o.replace(/ \(.*\)/, '')}</button>`).join('');
-    const W = 1100, H = 320, m = { l: 48, r: 20, t: 16, b: 32 };
+    const W = MOB ? 600 : 1100, H = MOB ? 400 : 320, m = MOB ? { l: 50, r: 14, t: 16, b: 38 } : { l: 48, r: 20, t: 16, b: 32 };
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const x = yy => m.l + (yy - Y0) / (Y1 - Y0) * (W - m.l - m.r), y = v => m.t + (1 - (v + 0.8) / 1.6) * (H - m.t - m.b);
     const ax = svgEl('g', { class: 'axis' }, svg);
     [-0.8, -0.4, 0, 0.4, 0.8].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? 'rgba(236,230,216,.35)' : GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
-    for (let yy = 1990; yy <= Y1; yy += 5) { const t = svgEl('text', { x: x(yy), y: H - 8, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
+    for (let yy = 1990; yy <= Y1; yy += MOB ? 10 : 5) { const t = svgEl('text', { x: x(yy), y: H - 8, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
     const zl = svgEl('text', { x: m.l + 6, y: y(0) - 6, fill: MUTED, 'font-family': 'IBM Plex Mono', 'font-size': 10.5 }, svg); zl.textContent = 'r = 0 · NO LINK';
     const layer = svgEl('g', {}, svg);
     const viz = document.getElementById('corrviz');
@@ -312,7 +312,7 @@ window.GLOSSARY = {
       line.style.setProperty('--len', line.getTotalLength()); requestAnimationFrame(() => requestAnimationFrame(() => { line.style.strokeDashoffset = 0; }));
       S.forEach(s => {
         const sig = s.p_value < 0.05;
-        const c = svgEl('circle', { cx: x(s.year), cy: y(s.r), r: 3.6, fill: sig ? SAGE : PANEL, stroke: SAGE, 'stroke-width': 1.4 }, layer);
+        const c = svgEl('circle', { cx: x(s.year), cy: y(s.r), r: MOB ? 5 : 3.6, fill: sig ? SAGE : PANEL, stroke: SAGE, 'stroke-width': 1.4 }, layer);
         c.addEventListener('pointerenter', e => showTip(`<b>${s.year} · ${o}</b>r = ${fmt(s.r, 3)} (95% CI ${fmt(s.ci_low, 2)} to ${fmt(s.ci_high, 2)})<br>p ${s.p_value < 0.001 ? '< 0.001' : '= ' + fmt(s.p_value, 3)} · n = ${s.n}`, e.clientX, e.clientY));
         c.addEventListener('pointerleave', hideTip);
       });
@@ -349,7 +349,8 @@ window.GLOSSARY = {
       const a = ang(k), lx = c + Math.cos(a) * (R + 22), ly = c + Math.sin(a) * (R + 22);
       svgEl('line', { x1: c + Math.cos(a) * r0, y1: c + Math.sin(a) * r0, x2: c + Math.cos(a) * R, y2: c + Math.sin(a) * R, stroke: 'rgba(236,230,216,.1)' }, svg);
       const t = svgEl('text', { x: lx, y: ly + 4, 'text-anchor': Math.abs(Math.cos(a)) < .2 ? 'middle' : Math.cos(a) > 0 ? 'start' : 'end', fill: MUTED, 'font-family': 'Barlow', 'font-size': 11, 'font-weight': 600, 'letter-spacing': '.06em' }, svg);
-      t.textContent = lab.replace(' per person', '').replace(' share', '').toUpperCase();
+      const SHORT = { 'Renewable energy share': 'RENEWABLES', 'Forest cover': 'FOREST', 'Agricultural land': 'FARMLAND', 'Fertiliser use': 'FERTILISER', 'PM2.5 exposure': 'PM2.5', 'Energy use per person': 'ENERGY' };
+      t.textContent = MOB ? SHORT[lab] : lab.replace(' per person', '').replace(' share', '').toUpperCase();
     });
     const gB = svgEl('g', {}, svg), gA = svgEl('g', {}, svg);
     const hub = svgEl('circle', { cx: c, cy: c, r: r0 + 2, fill: PANEL, stroke: 'rgba(236,230,216,.25)' }, svg);
@@ -395,7 +396,7 @@ window.GLOSSARY = {
         pb[j].style.opacity = b && pct[b]?.[k] != null ? 1 : 0;
       });
       const ppi = C[a].ppi[yi(y)], cl = C[a].cl[yi(y)];
-      mid.textContent = ppi != null ? `PPI ${ppi.toFixed(0)}` : '';
+      mid.textContent = ppi != null ? (MOB ? ppi.toFixed(0) : `PPI ${ppi.toFixed(0)}`) : '';
       svg.appendChild(hub); svg.appendChild(mid);
       document.getElementById('fp-name').textContent = C[a].n;
       document.getElementById('fp-meta').innerHTML = `${y} · ${cl ? cl + ' · ' + CL[cl].label : 'no profile'}${b ? ` · dashed: ${C[b].n}` : ''}`;
@@ -427,7 +428,7 @@ window.GLOSSARY = {
   // ---------- alluvial (published period result)
   (function alluvial() {
     const svg = document.getElementById('alluvial'); if (!svg) return;
-    const W = 1100, H = 460, m = { l: 20, r: 20, t: 30, b: 10 }, nw = 18, gap = 10;
+    const W = MOB ? 600 : 1100, H = MOB ? 620 : 460, m = MOB ? { l: 6, r: 6, t: 36, b: 10 } : { l: 20, r: 20, t: 30, b: 10 }, nw = MOB ? 22 : 18, gap = 10;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const cols = P.map((_, k) => m.l + k * (W - m.l - m.r - nw) / (P.length - 1));
     const A2 = X.assign, ids = Object.keys(A2);
@@ -453,7 +454,7 @@ window.GLOSSARY = {
       K.forEach(k => {
         const o = pos[t][k];
         svgEl('rect', { x: cols[t], y: o.y, width: nw, height: Math.max(1, o.h), fill: CL[k].color }, nodesG);
-        if (o.h > 16) { const tx = svgEl('text', { x: t === P.length - 1 ? cols[t] - 6 : cols[t] + nw + 6, y: o.y + o.h / 2 + 4, 'text-anchor': t === P.length - 1 ? 'end' : 'start', fill: INK, 'font-family': 'Barlow', 'font-weight': 600, 'font-size': 12 }, nodesG); tx.textContent = `${k} · ${counts[t][k]}`; }
+        if (o.h > (MOB ? 26 : 16)) { const tx = svgEl('text', { x: t === P.length - 1 ? cols[t] - 6 : cols[t] + nw + 6, y: o.y + o.h / 2 + 4, 'text-anchor': t === P.length - 1 ? 'end' : 'start', fill: INK, 'font-family': 'Barlow', 'font-weight': 600, 'font-size': 12 }, nodesG); tx.textContent = `${k} · ${counts[t][k]}`; }
       });
     });
     document.getElementById('alluvial-note').textContent = X.persistence.map(p => Math.round(p.stayed * 100) + '%').join(' and ') + ' stayed in the same profile';
@@ -491,7 +492,7 @@ window.GLOSSARY = {
       Explain.takeaway(viz).set('Higher pressure goes with <b>higher income, longer lives, more urbanisation and lower infant mortality</b> in all three periods, and with lower female labour participation. Unemployment shows no link. The positive links look weaker in 2011–2023, but year by year that change is not statistically significant (see the correlation chart above).');
     }
     const pal = ['#8fb8ff', '#9cc7a4', '#ece6d8', '#a29f8c', '#ef7b6b', '#e2b45c'];
-    const W = 1100, H = 420, m = { l: 48, r: 300, t: 20, b: 30 };
+    const W = MOB ? 600 : 1100, H = MOB ? 480 : 420, m = MOB ? { l: 56, r: 14, t: 20, b: 36 } : { l: 48, r: 300, t: 20, b: 30 };
     as.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const x = k => m.l + 20 + k / 2 * (W - m.l - m.r - 40), y = v => m.t + (1 - (v + 0.7) / 1.4) * (H - m.t - m.b);
     const ax = svgEl('g', { class: 'axis' }, as);
@@ -514,13 +515,16 @@ window.GLOSSARY = {
     });
     lab.sort((a, b) => a[0] - b[0]);
     for (let i = 1; i < lab.length; i++) if (lab[i][0] - lab[i - 1][0] < 15) lab[i][0] = lab[i - 1][0] + 15;
-    lab.forEach(([yy, o, c]) => { const t = svgEl('text', { x: x(2) + 20, y: yy + 4, fill: c, 'font-size': 12, 'font-family': 'Barlow', 'font-weight': 600 }, as); t.textContent = o; });
+    if (!MOB) lab.forEach(([yy, o, c]) => { const t = svgEl('text', { x: x(2) + 20, y: yy + 4, fill: c, 'font-size': 12, 'font-family': 'Barlow', 'font-weight': 600 }, as); t.textContent = o; });
+    const lg = document.createElement('div'); lg.className = 'legend';
+    lg.innerHTML = outs.map((o, j) => `<span><i style="background:${pal[j]};border-radius:50%"></i>${o}</span>`).join('') + '<span><i style="background:transparent;border:1.5px solid #ece6d8;border-radius:50%"></i>Hollow: not significant</span>';
+    (as.closest('.svgwrap') || as).after(lg);
   })();
 
   // ---------- K diagnostics
   (function kchart() {
     const svg = document.getElementById('ksvg'); if (!svg) return;
-    const W = 1100, H = 280, m = { l: 44, r: 12, t: 22, b: 28 };
+    const W = MOB ? 600 : 1100, H = MOB ? 340 : 280, m = MOB ? { l: 50, r: 8, t: 28, b: 34 } : { l: 44, r: 12, t: 22, b: 28 };
     {
       const viz = document.getElementById('kviz');
       Explain.guide(viz, [
@@ -619,7 +623,7 @@ window.GLOSSARY = {
       ['im', 'Infant mortality', 'per 1,000', null]
     ];
     function spark(host, c, iso, key, label, unit, liveVal) {
-      const W = 520, H = 170, m = { l: 52, r: 10, t: 14, b: 22 };
+      const W = MOB ? 380 : 520, H = MOB ? 190 : 170, m = { l: MOB ? 56 : 52, r: 10, t: 14, b: 22 };
       const vals = c[key], lv = [];
       if (liveVal) LIVE_YEARS.forEach(y => { const r = liveRow(iso, y); const v = r ? liveVal(r) : null; if (v != null) lv.push([y, v]); });
       const all = [...vals.filter(v => v != null), ...lv.map(p => p[1])];

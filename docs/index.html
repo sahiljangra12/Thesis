@@ -15,8 +15,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/fraunces-300.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/site.css?v=20261119e">
-<link rel="stylesheet" href="assets/terra.css?v=20261119e">
+<link rel="stylesheet" href="assets/site.css?v=20261119f">
+<link rel="stylesheet" href="assets/terra.css?v=20261119f">
 </head>
 <body>
 <a class="skip" href="#question">Skip to content</a>
@@ -129,7 +129,7 @@
       </div>
       <svg id="scatter" aria-label="Scatter of PPI against life expectancy by year"></svg>
       <div class="legend" id="sc-legend"></div>
-      <p class="viz-note">Each circle is a country, sized by population and coloured by its nearest published profile in that year. The badge shows the Pearson correlation with its 95% Fisher-z interval and the number of countries.</p>
+      <p class="viz-note">Each circle is a country, sized by population and coloured by its nearest published profile in that year. The readout above the chart gives the Pearson correlation r with its 95% Fisher-z interval and the number of countries.</p>
     </div>
 
     <div class="viz" id="corrviz" style="margin-top:28px">
@@ -243,7 +243,7 @@
       <div class="viz-head"><label class="search"><span class="sr">Country</span><select id="c-country" aria-label="Country"></select></label><div class="chips" id="c-quick"></div></div>
       <div class="pf-head"><div><b id="c-name">India</b><span id="c-sub"></span></div><div id="c-status"></div></div>
       <div class="pf-strip" id="c-strip" aria-label="Profile by year"></div>
-      <div class="pf-grid" id="c-grid" style="grid-template-columns:repeat(2,1fr)"></div>
+      <div class="pf-grid two" id="c-grid"></div>
       <p class="viz-note">Solid points: thesis data. Hollow points: provisional values from the live World Bank feed for years after 2023, on the same scale.</p>
     </div>
   </div>
@@ -341,12 +341,12 @@
 
 <dialog class="lightbox" aria-label="Figure"><button aria-label="Close">×</button><img alt=""><p></p></dialog>
 
-<script src="thesis-data.js?v=20261119e"></script>
+<script src="thesis-data.js?v=20261119f"></script>
 <script src="assets/vendor/d3-array.min.js"></script>
 <script src="assets/vendor/d3-geo.min.js"></script>
 <script src="assets/vendor/topojson-client.min.js"></script>
-<script src="assets/site.js?v=20261119e"></script>
-<script src="assets/map.js?v=20261119e"></script>
-<script src="assets/thesis.js?v=20261119e"></script>
+<script src="assets/site.js?v=20261119f"></script>
+<script src="assets/map.js?v=20261119f"></script>
+<script src="assets/thesis.js?v=20261119f"></script>
 </body>
 </html>

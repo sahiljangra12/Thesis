@@ -1,6 +1,9 @@
 /* Shared behaviour: nav, reveal-on-scroll, count-up numbers, parallax, lightbox, tooltip helper. */
 (function () {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // phones get their own chart layouts (narrower drawing space, larger type, fewer ticks)
+  window.MOB = matchMedia('(max-width: 700px)').matches;
+  document.documentElement.classList.toggle('mob', window.MOB);
 
   // ---------- nav: always fixed at the top; solid once scrolled; mobile menu ----------
   const nav = document.querySelector('.nav');
@@ -15,11 +18,12 @@
       b.addEventListener('click', () => {
         const o = nav.classList.toggle('open');
         b.setAttribute('aria-expanded', String(o));
+        document.documentElement.classList.toggle('menu-open', o);
       });
       nav.querySelectorAll('ul a').forEach(a => a.addEventListener('click', () => {
-        nav.classList.remove('open'); b.setAttribute('aria-expanded', 'false');
+        nav.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); document.documentElement.classList.remove('menu-open');
       }));
-      addEventListener('keydown', e => { if (e.key === 'Escape') { nav.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); } });
+      addEventListener('keydown', e => { if (e.key === 'Escape') { nav.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); document.documentElement.classList.remove('menu-open'); } });
     }
     // highlight the current section
     const links = [...nav.querySelectorAll('ul a[href^="#"]')];
