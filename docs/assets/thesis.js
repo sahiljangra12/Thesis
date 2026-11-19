@@ -1,7 +1,23 @@
 /* Thesis site ("Terra", dark): year-by-year dashboards with uncertainty, plus the published period results. */
+window.GLOSSARY = {
+  ppi: ['Planetary Pressure Index (PPI)', 'A 0–100 score combining six indicators: renewable energy share and forest cover (reversed, so less means more pressure), agricultural land, fertiliser use, PM2.5 air pollution and energy use per person. Each is standardised, at least four must be present, and the average is rescaled to 0–100. Relative to this sample, not a physical limit.'],
+  profile: ['Development profile', 'One of four groups (C1–C4) found by k-means clustering on the PPI, income, life expectancy, infant mortality and urbanisation: C1 low development and lower pressure up to C4 high development and higher pressure.'],
+  kmeans: ['k-means clustering', 'A method that sorts countries into K groups so that countries in the same group are as similar as possible on the chosen measures.'],
+  silhouette: ['Silhouette score', 'How well each country fits its own group compared with the next-nearest group, from −1 to 1. Around 0.25 means the groups overlap noticeably.'],
+  ci: ['95% confidence interval', 'The range that would contain the true value in 95% of repeated samples. If an interval for a change or a trend includes zero, the change is not statistically significant at the 5% level.'],
+  bootstrap: ['Bootstrap', 'Uncertainty found by recomputing the statistic thousands of times on samples of countries drawn with replacement (2,000 draws here). The middle 95% of the results is the interval.'],
+  r: ['Correlation (r)', 'How closely two measures move together across countries, from −1 (perfectly opposite) through 0 (no straight-line link) to +1 (perfectly together). Roughly: below 0.3 weak, 0.3–0.5 moderate, above 0.5 strong. It does not show cause.'],
+  fisher: ['Fisher z interval', 'The standard way to put a confidence interval on a correlation: r is transformed so its sampling error is roughly normal, the interval is built, then transformed back.'],
+  pvalue: ['p-value', 'How surprising the data would be if there were truly no effect. Below 0.05 is called statistically significant. It is not the probability that a finding is true.'],
+  fe: ['Within-country trend (fixed effects)', 'A regression that compares each country only with itself over time, so fixed differences between countries cannot drive the result. Standard errors are clustered by country to allow for year-to-year dependence.'],
+  percentile: ['Percentile', 'The share of countries with a lower value. The 80th percentile means higher than 80% of countries in that year.'],
+  provisional: ['Provisional data', 'The newest World Bank values, fetched weekly and placed on the thesis scale without re-estimating anything. Not part of the thesis results; they may be revised.'],
+  pooled: ['Pooled scale', 'One fixed scale built from all three periods together, so a score of 40 means the same in 1995 and in 2020.'],
+  ols: ['Least-squares line (OLS)', 'The straight line that best fits the points, minimising the squared vertical distances. Its slope is the average change in the outcome per unit of PPI.']
+};
 (async function () {
   if (typeof THESIS === 'undefined') return;
-  const V = '20261119c';
+  const V = '20261119d';
   const [X, AN] = await Promise.all([
     fetch(`data/thesis-extra.json?v=${V}`).then(r => r.json()),
     fetch(`data/thesis_annual.json?v=${V}`).then(r => r.json())
@@ -10,6 +26,8 @@
   const LIVE = await fetch('https://raw.githubusercontent.com/sahiljangra12/Thesis/main/docs/data/live.json', { cache: 'no-store' })
     .then(r => (r.ok ? r.json() : Promise.reject())).catch(() => fetch('data/live.json').then(r => (r.ok ? r.json() : null)).catch(() => null));
 
+  Explain.terms();
+  Explain.glossary(document.getElementById('gloss'));
   const INK = '#ece6d8', MUTED = '#aaa592', GRID = 'rgba(236,230,216,.07)', SAND = '#d9c9a3', SAGE = '#9cc7a4', PANEL = '#151912';
   const P = THESIS.periods, CL = AN.clusters, K = ['C1', 'C2', 'C3', 'C4'];
   const YEARS = AN.years, Y0 = YEARS[0], Y1 = YEARS[YEARS.length - 1];
@@ -88,6 +106,24 @@
     const x = y => m.l + (y - Y0) / (YMAX - Y0) * (W - m.l - m.r);
     const layer = svgEl('g', {}, svg);
     const leg = document.getElementById('trend-legend');
+    const viz = document.getElementById('trendviz');
+    const GD = Explain.guide(viz, [
+      'Each point is the <strong>average pressure score</strong> of all countries that year (0 = least pressure, 100 = most).',
+      'The <strong>shaded band</strong> is the 95% confidence interval: where the true average most likely lies. Point at a year for its numbers.',
+      '<strong>Hollow points</strong> are years with incomplete data (fewer than 150 countries). Diamonds are provisional live data.'
+    ]);
+    const RO = Explain.readout(viz), TK = Explain.takeaway(viz);
+    const tst = AN.tests.find(t => t.measure.startsWith('ppi per year'));
+    const setYear = s => RO.set([
+      ['Year', s.year],
+      ['Mean PPI', fmt(s.mean_ppi), `95% CI ${fmt(s.ci_low)}–${fmt(s.ci_high)}`],
+      ['Median PPI', fmt(s.median_ppi), 'middle country'],
+      ['Countries', s.countries_with_ppi, s.countries_with_ppi >= 150 ? 'full coverage' : 'partial coverage', s.countries_with_ppi >= 150 ? '' : 'warn'],
+      ['Trend within countries', (tst.estimate >= 0 ? '+' : '') + fmt(tst.estimate, 3), `per year · p = ${fmt(tst.p_value, 2)}`]
+    ]);
+    let mode = 'ppi';
+    svg.addEventListener('pointermove', e => { if (mode !== 'share') return; const bb = svg.getBoundingClientRect(); const yy = Math.round(Y0 + ((e.clientX - bb.left) / bb.width * W - m.l) / (W - m.l - m.r) * (YMAX - Y0)); if (SUM[yy] && SUM[yy].countries_profiled >= 150) setShare(SUM[yy]); });
+    const setShare = s => RO.set([['Year', s.year], ...K.map(c => [`${c} · ${CL[c].label.split(',')[0]}`, Math.round(s['share_' + c] * 100) + '%', ''])]);
     function axes(y, ticks, fmtT) {
       const ax = svgEl('g', { class: 'axis' }, layer);
       ticks.forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = fmtT(v); });
@@ -107,9 +143,15 @@
       S.forEach(s => {
         const full = s.countries_with_ppi >= 150;
         const c = svgEl('circle', { cx: x(s.year), cy: y(s.mean_ppi), r: 4, fill: full ? SAND : PANEL, stroke: SAND, 'stroke-width': 1.5 }, layer);
-        c.addEventListener('pointerenter', e => showTip(`<b>${s.year}</b>Mean PPI ${fmt(s.mean_ppi)} (95% CI ${fmt(s.ci_low)}–${fmt(s.ci_high)})<br>Median ${fmt(s.median_ppi)} · ${s.countries_with_ppi} countries${full ? '' : '<br>Partial coverage: compare with care'}`, e.clientX, e.clientY));
-        c.addEventListener('pointerleave', hideTip);
+        c.addEventListener('pointerenter', e => { setYear(s); showTip(`<b>${s.year}</b>Mean PPI ${fmt(s.mean_ppi)} (95% CI ${fmt(s.ci_low)}–${fmt(s.ci_high)})<br>Median ${fmt(s.median_ppi)} · ${s.countries_with_ppi} countries${full ? '' : '<br>Partial coverage: compare with care'}`, e.clientX, e.clientY); });
+        c.addEventListener('pointerleave', () => { hideTip(); setYear(SUM[LASTFULL]); });
       });
+      setYear(SUM[LASTFULL]);
+      const a = SUM[FIRSTFULL], b = SUM[LASTFULL], z = SUM[Y1];
+      Explain.annotate(layer, { x: x(a.year), y: y(a.mean_ppi), tx: x(a.year) + 14, ty: y(a.ci_high) - 26, elbow: true, text: [`${a.year}: ${fmt(a.mean_ppi)}`, `95% CI ${fmt(a.ci_low)}–${fmt(a.ci_high)}`], color: SAND, delay: 1400 });
+      Explain.annotate(layer, { x: x(b.year), y: y(b.mean_ppi), tx: x(b.year) - 14, ty: y(b.ci_low) + 30, anchor: 'end', elbow: true, text: [`${b.year}: ${fmt(b.mean_ppi)}`, `95% CI ${fmt(b.ci_low)}–${fmt(b.ci_high)}`], color: SAND, delay: 1700 });
+      if (z && z.countries_with_ppi < 150) Explain.annotate(layer, { x: x(z.year), y: y(z.mean_ppi), tx: x(z.year) - 14, ty: y(43), anchor: 'end', elbow: true, text: [`${z.year}: ONLY ${z.countries_with_ppi} COUNTRIES`, 'read with care'], color: '#d9a35a', delay: 2000 });
+      TK.set(`Average pressure barely moved: <b>${fmt(a.mean_ppi)}</b> in ${a.year} and <b>${fmt(b.mean_ppi)}</b> in ${b.year}, with overlapping intervals. Within countries the trend is ${tst.estimate >= 0 ? '+' : ''}${fmt(tst.estimate, 3)} points a year (95% CI ${fmt(tst.ci_low, 3)} to ${fmt(tst.ci_high, 3)}), which is <b>statistically indistinguishable from zero</b>. Over the same years life expectancy rose by about 0.28 years every year.`);
       LIVE_YEARS.forEach(yy => {
         const v = Object.values(LIVE.countries).map(c => c.years[yy] && c.years[yy].ppi).filter(z => z != null);
         if (v.length < 30) return; // too few countries for a comparable mean
@@ -137,10 +179,16 @@
         p.addEventListener('pointerleave', hideTip);
       }
       leg.innerHTML = legendHTML() + '<span>Years with at least 150 profiled countries</span>';
+      const a = S[0], b = S[S.length - 1];
+      setShare(b);
+      const pc = (s, c) => Math.round(s['share_' + c] * 100) + '%';
+      TK.set(`Countries moved up the development ladder: the least-developed profile C1 shrank from <b>${pc(a, 'C1')}</b> of countries in ${a.year} to <b>${pc(b, 'C1')}</b> in ${b.year}, while the two higher-pressure profiles C3 and C4 grew from ${Math.round((a.share_C3 + a.share_C4) * 100)}% to <b>${Math.round((b.share_C3 + b.share_C4) * 100)}%</b>.`);
     }
     document.querySelectorAll('#trendviz [data-t]').forEach(b => b.addEventListener('click', () => {
       document.querySelectorAll('#trendviz [data-t]').forEach(z => z.setAttribute('aria-pressed', String(z === b)));
+      mode = b.dataset.t;
       b.dataset.t === 'ppi' ? drawPPI() : drawShare();
+      GD.querySelectorAll('.gi span')[0].innerHTML = b.dataset.t === 'ppi' ? 'Each point is the <strong>average pressure score</strong> of all countries that year (0 = least pressure, 100 = most).' : 'Each colour is the <strong>share of countries</strong> in one development profile that year; together they make 100%.';
     }));
     onReveal(document.getElementById('trendviz'), drawPPI);
   })();
@@ -158,7 +206,8 @@
     const xl = svgEl('text', { x: W - m.r, y: H - 6, 'text-anchor': 'end' }, ax); xl.textContent = 'PLANETARY PRESSURE INDEX →';
     const yl = svgEl('text', { x: m.l + 6, y: m.t + 12 }, ax); yl.textContent = 'LIFE EXPECTANCY (YEARS)';
     const big = svgEl('text', { x: W - m.r - 6, y: H - m.b - 14, 'text-anchor': 'end', fill: 'rgba(236,230,216,.08)', 'font-family': 'Fraunces', 'font-size': 120 }, svg);
-    const fitL = svgEl('line', { stroke: SAND, 'stroke-width': 1.5, 'stroke-dasharray': '6 5', opacity: .8 }, svg);
+    svgEl('rect', { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, svgEl('clipPath', { id: 'scclip' }, svgEl('defs', {}, svg)));
+    const fitL = svgEl('line', { stroke: SAND, 'stroke-width': 1.5, 'stroke-dasharray': '6 5', opacity: .8, 'clip-path': 'url(#scclip)' }, svg);
     const g = svgEl('g', {}, svg);
     const order = [...isos].sort((a, b) => (C[b].pop[yi(2000)] || 0) - (C[a].pop[yi(2000)] || 0));
     const nodes = {};
@@ -176,6 +225,15 @@
     });
     const input = document.getElementById('sc-year'), out = document.getElementById('sc-out'), badge = document.getElementById('sc-r');
     input.min = Y0; input.max = YMAX;
+    const viz = document.getElementById('scatterviz');
+    Explain.guide(viz, [
+      'Each circle is a <strong>country</strong>: size shows population, colour shows its development profile that year.',
+      '<strong>Further right</strong> = more environmental pressure. <strong>Higher</strong> = longer life expectancy.',
+      'The dashed line is the <strong>average trend</strong>; r measures how tightly countries follow it (0 = no link, 1 = perfect).'
+    ]);
+    const RO = Explain.readout(viz), TK = Explain.takeaway(viz);
+    const named = ['CHN', 'IND', 'USA', 'NGA', 'BRA', 'SWE', 'QAT'].filter(i => C[i]);
+    const tags = Object.fromEntries(named.map(i => { const t = svgEl('text', { 'font-family': 'IBM Plex Mono', 'font-size': 11, 'font-weight': 500, fill: INK, 'paint-order': 'stroke', stroke: '#0d0f0b', 'stroke-width': 3, opacity: 0 }, svg); t.textContent = C[i].n.toUpperCase(); return [i, t]; }));
     function draw(yy) {
       cur = yy; input.value = yy; out.textContent = yy; big.textContent = yy;
       const pts = [];
@@ -189,12 +247,30 @@
         pts.push([v.ppi, v.le]);
       }
       const r = AN.correlations.find(z => z.year === yy && z.outcome.startsWith('Life expectancy'));
+      badge.hidden = true;
       badge.innerHTML = r ? `r = ${fmt(r.r, 2)} · 95% CI ${fmt(r.ci_low, 2)} to ${fmt(r.ci_high, 2)} · n = ${r.n}${r.n < 150 ? ' · partial coverage' : ''}` : `provisional · n = ${pts.length}`;
+      let b = null;
       if (pts.length > 2) {
         const n = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
-        const b = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0);
+        b = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0);
         fitL.setAttribute('x1', x(0)); fitL.setAttribute('x2', x(100)); fitL.setAttribute('y1', y(my - b * mx)); fitL.setAttribute('y2', y(my + b * (100 - mx)));
       }
+      for (const i of named) {
+        const v = val(i, yy), t = tags[i];
+        if (v.ppi == null || v.le == null) { t.setAttribute('opacity', 0); continue; }
+        const rr = Math.max(2.5, Math.sqrt(v.pop || 0) / 1300);
+        t.setAttribute('x', x(v.ppi) + rr + 4); t.setAttribute('y', y(v.le) - rr * 0.6); t.setAttribute('opacity', .95);
+      }
+      const sg = r ? r.p_value < 0.05 : null;
+      RO.set([
+        ['Year', yy, yy > Y1 ? 'provisional' : ''],
+        ['Countries', pts.length, r && r.n < 150 ? 'partial coverage' : ''],
+        ['Correlation r', r ? fmt(r.r, 2) : 'n/a', r ? `95% CI ${fmt(r.ci_low, 2)} to ${fmt(r.ci_high, 2)}` : ''],
+        ['Strength', r ? Explain.strength(r.r).replace(/^a /, '') : 'n/a', r ? (sg ? 'significant at 5%' : 'not significant') : '', r ? (sg ? 'up' : 'warn') : ''],
+        ['Slope', b == null ? 'n/a' : (b >= 0 ? '+' : '') + fmt(b * 10, 1) + ' yrs', 'life expectancy per +10 PPI']
+      ]);
+      if (r && b != null) TK.set(`In <b>${yy}</b>, countries with more environmental pressure tended to live longer: ${Explain.strength(r.r)} ${r.r >= 0 ? 'positive' : 'negative'} link (r = ${fmt(r.r, 2)}). On average, each 10 extra pressure points went with <b>${fmt(Math.abs(b * 10), 1)} ${b >= 0 ? 'more' : 'fewer'} years</b> of life expectancy. This is a pattern across countries, not proof that pressure causes longer lives: richer countries both live longer and press harder.`);
+      else TK.set(`${yy} uses provisional data for ${pts.length} countries; no interval is computed for it.`);
     }
     const play = document.getElementById('sc-play');
     function stop() { clearInterval(timer); timer = null; play.textContent = '▶'; }
@@ -218,7 +294,15 @@
     const ax = svgEl('g', { class: 'axis' }, svg);
     [-0.8, -0.4, 0, 0.4, 0.8].forEach(v => { svgEl('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? 'rgba(236,230,216,.35)' : GRID }, ax); const t = svgEl('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end' }, ax); t.textContent = v.toFixed(1); });
     for (let yy = 1990; yy <= Y1; yy += 5) { const t = svgEl('text', { x: x(yy), y: H - 8, 'text-anchor': 'middle' }, ax); t.textContent = yy; }
+    const zl = svgEl('text', { x: m.l + 6, y: y(0) - 6, fill: MUTED, 'font-family': 'IBM Plex Mono', 'font-size': 10.5 }, svg); zl.textContent = 'r = 0 · NO LINK';
     const layer = svgEl('g', {}, svg);
+    const viz = document.getElementById('corrviz');
+    Explain.guide(viz, [
+      'Pick an outcome. Each point is the <strong>correlation r</strong> between pressure and that outcome across all countries in one year, from −1 to +1.',
+      'Above the zero line: more pressure goes with <strong>more</strong> of the outcome. Below: with <strong>less</strong>.',
+      'The band is the 95% confidence interval. <strong>Filled points</strong> are significant; where the band crosses zero, there is no clear link.'
+    ]);
+    const RO = Explain.readout(viz), TK = Explain.takeaway(viz);
     function draw(o) {
       layer.innerHTML = '';
       const S = AN.correlations.filter(c => c.outcome === o);
@@ -232,11 +316,23 @@
         c.addEventListener('pointerenter', e => showTip(`<b>${s.year} · ${o}</b>r = ${fmt(s.r, 3)} (95% CI ${fmt(s.ci_low, 2)} to ${fmt(s.ci_high, 2)})<br>p ${s.p_value < 0.001 ? '< 0.001' : '= ' + fmt(s.p_value, 3)} · n = ${s.n}`, e.clientX, e.clientY));
         c.addEventListener('pointerleave', hideTip);
       });
-      const n0 = S.find(s => s.year === FIRSTFULL), n1 = S.find(s => s.year === LASTFULL);
+      const n0 = S.find(s => s.year === FIRSTFULL), n1 = S.find(s => s.year === LASTFULL), zz = S[S.length - 1];
+      if (zz && zz.n < 150) Explain.annotate(layer, { x: x(zz.year), y: y(zz.r), tx: x(zz.year) - 16, ty: y(zz.ci_low) + 26, anchor: 'end', elbow: true, text: [`${zz.year}: ONLY ${zz.n} COUNTRIES`, 'wide interval, read with care'], color: '#d9a35a', delay: 1300 });
       const chg = AN.tests.find(t => t.measure.startsWith(`change in r(PPI, ${o})`));
       document.getElementById('corr-note').textContent = (n0 && n1 ? `${o}: r = ${fmt(n0.r, 2)} in ${n0.year} and ${fmt(n1.r, 2)} in ${n1.year}` : o) +
         (chg ? ` (change ${fmt(chg.estimate, 2)}, 95% CI ${fmt(chg.ci_low, 2)} to ${fmt(chg.ci_high, 2)}, paired bootstrap)` : '') +
         '. Filled points are significant at 5%; the band is the 95% Fisher-z interval for each year.';
+      const nsig = S.filter(z => z.p_value < 0.05).length, plain = o.replace(/ \(.*\)/, '').toLowerCase();
+      const csig = chg ? (chg.ci_low > 0 || chg.ci_high < 0) : null;
+      RO.set([
+        ['Outcome', o.replace(/ \(.*\)/, '')],
+        [`r in ${n0 ? n0.year : FIRSTFULL}`, n0 ? fmt(n0.r, 2) : 'n/a', n0 ? `95% CI ${fmt(n0.ci_low, 2)} to ${fmt(n0.ci_high, 2)}` : ''],
+        [`r in ${n1 ? n1.year : LASTFULL}`, n1 ? fmt(n1.r, 2) : 'n/a', n1 ? `95% CI ${fmt(n1.ci_low, 2)} to ${fmt(n1.ci_high, 2)}` : ''],
+        ['Change tested', chg ? (chg.estimate >= 0 ? '+' : '') + fmt(chg.estimate, 2) : 'not tested', chg ? `p = ${fmt(chg.p_value, 2)} · ${csig ? 'significant' : 'not significant'}` : '', chg ? (csig ? 'up' : 'warn') : ''],
+        ['Significant years', `${nsig} of ${S.length}`, 'p < 0.05']
+      ]);
+      const dir = n1 && n1.r >= 0 ? 'more' : 'less';
+      TK.set(n1 ? `Across countries, more environmental pressure goes with <b>${dir} ${plain}</b>: ${Explain.strength(n1.r)} link in ${n1.year} (r = ${fmt(n1.r, 2)}), significant in ${nsig} of ${S.length} years. ${chg ? (csig ? `The link changed significantly between ${FIRSTFULL} and ${LASTFULL} (${fmt(chg.estimate, 2)}).` : `It looks ${Math.abs(n1.r) < Math.abs(n0.r) ? 'weaker' : 'stronger'} in ${LASTFULL} than in ${FIRSTFULL}, but the change (${fmt(chg.estimate, 2)}, 95% CI ${fmt(chg.ci_low, 2)} to ${fmt(chg.ci_high, 2)}) is <b>not statistically significant</b>.`) : ''}` : '');
     }
     seg.addEventListener('click', e => { const b = e.target.closest('[data-o]'); if (!b) return; seg.querySelectorAll('button').forEach(z => z.setAttribute('aria-pressed', String(z === b))); draw(b.dataset.o); });
     onReveal(document.getElementById('corrviz'), () => draw(first));
@@ -269,6 +365,13 @@
     const pa = shapes(gA, SAGE, '#cfe3d4', .55), pb = shapes(gB, 'none', '#d9a35a', 1);
     pb.forEach(p => p.setAttribute('stroke-dasharray', '4 3'));
     const sa = document.getElementById('fp-a'), sb = document.getElementById('fp-b'), yr = document.getElementById('fp-year'), out = document.getElementById('fp-out');
+    const viz = document.getElementById('fpviz');
+    Explain.guide(viz, [
+      'Each <strong>petal</strong> is one of the six pressures. Its length is the country\u2019s <strong>percentile</strong> among all countries that year.',
+      'A petal reaching the dotted middle ring is average (50th percentile). Longer = more pressure than most countries.',
+      'The <strong style="color:#d9a35a">dashed orange outline</strong> is the comparison country. Missing indicators are left blank.'
+    ]);
+    const TK = Explain.takeaway(viz);
     // default: the latest year in which at least 150 countries report five or more of the six indicators
     const FPY = Math.max(...YEARS.filter(y => Object.values(byYear[y] || {}).filter(r => IND.filter(([k]) => r[COL[k]] != null).length >= 5).length >= 150));
     yr.min = Y0; yr.max = Y1; yr.value = FPY; out.textContent = FPY;
@@ -300,6 +403,14 @@
         const va = rows[a]?.[COL[k]], p_ = pct[a]?.[k], vb = b ? rows[b]?.[COL[k]] : null;
         return `<li><span><i style="background:${SAGE}"></i>${lab}</span><b>${va == null ? '<span class="muted">not reported</span>' : fmt(va, va >= 100 ? 0 : 1) + ` <small>${unit}</small>`}</b><small>${p_ == null ? '' : 'P' + Math.round(p_)}${b && vb != null ? ' · ' + b + ' ' + fmt(vb, vb >= 100 ? 0 : 1) : ''}</small></li>`;
       }).join('');
+      const have = IND.filter(([k]) => pct[a]?.[k] != null).map(([k, lab]) => [lab, pct[a][k]]).sort((p, q) => q[1] - p[1]);
+      if (have.length) {
+        const lc = t => (t.startsWith('PM') ? t : t.charAt(0).toLowerCase() + t.slice(1));
+        const hi = have[0], lo = have[have.length - 1];
+        let cmp = '';
+        if (b && C[b]) { const pb_ = C[b].ppi[yi(y)]; if (pb_ != null && ppi != null) cmp = ` Its overall score of ${fmt(ppi)} is ${ppi > pb_ ? 'higher' : 'lower'} than ${C[b].n}\u2019s ${fmt(pb_)}.`; }
+        TK.set(`In <b>${y}</b>, ${C[a].n}\u2019s biggest pressure was <b>${lc(hi[0])}</b>, higher than ${Math.round(hi[1])}% of countries; its smallest was ${lc(lo[0])} (${Math.round(lo[1])}th percentile).${cmp}${have.length < IND.length ? ` ${IND.length - have.length} of the six indicators were not reported that year.` : ''}`);
+      } else TK.set(`${C[a].n} reported none of the six indicators in ${y}.`);
     }
     onReveal(document.getElementById('fpviz'), draw);
   })();
@@ -346,6 +457,16 @@
       });
     });
     document.getElementById('alluvial-note').textContent = X.persistence.map(p => Math.round(p.stayed * 100) + '%').join(' and ') + ' stayed in the same profile';
+    {
+      const viz = document.getElementById('alluvial-viz');
+      Explain.guide(viz, [
+        'The three columns are the three periods. Each coloured block is a <strong>profile</strong>; its height is the number of countries in it.',
+        'The bands between columns are <strong>countries moving</strong>: a band\u2019s width is how many countries took that path. Point at one for the count.',
+        'Faint bands stay in the same profile; bright bands change profile.'
+      ]);
+      const mv = [0, 1].map(t => { let up = 0, down = 0, n = 0; ids.forEach(i => { const a = A2[i][t], b = A2[i][t + 1]; if (!a || !b) return; n++; if (b > a) up++; else if (b < a) down++; }); return { up, down, n }; });
+      Explain.takeaway(viz).set(`Profiles are sticky: <b>${X.persistence.map(p => Math.round(p.stayed * 100) + '%').join(' and ')}</b> of countries kept their profile from one period to the next. Almost every move was <b>upward</b>, towards more development and more pressure: ${mv[0].up} up and ${mv[0].down} down from the 1990s to the 2000s, ${mv[1].up} up and ${mv[1].down} down from the 2000s to 2011–2023.`);
+    }
     const clip = svgEl('clipPath', { id: 'alclip' }, svgEl('defs', {}, svg)); const cr = svgEl('rect', { x: 0, y: 0, width: 0, height: H }, clip);
     flows.setAttribute('clip-path', 'url(#alclip)');
     onReveal(document.getElementById('alluvial-viz'), () => {
@@ -360,8 +481,17 @@
   (function assoc() {
     const as = document.getElementById('assoc'); if (!as) return;
     const reg = X.regressions, outs = [...new Set(reg.map(r => r.outcome))];
+    {
+      const viz = document.getElementById('assocviz');
+      Explain.guide(viz, [
+        'Each line is one outcome; each point is its <strong>correlation with the PPI</strong> in one period.',
+        'Vertical bars are 95% confidence intervals. <strong>Filled points</strong> are statistically significant; hollow ones are not.',
+        'Points above zero rise with pressure, points below fall with it. Point at a dot for the regression details.'
+      ]);
+      Explain.takeaway(viz).set('Higher pressure goes with <b>higher income, longer lives, more urbanisation and lower infant mortality</b> in all three periods, and with lower female labour participation. Unemployment shows no link. The positive links look weaker in 2011–2023, but year by year that change is not statistically significant (see the correlation chart above).');
+    }
     const pal = ['#8fb8ff', '#9cc7a4', '#ece6d8', '#a29f8c', '#ef7b6b', '#e2b45c'];
-    const W = 640, H = 400, m = { l: 40, r: 210, t: 20, b: 30 };
+    const W = 1100, H = 420, m = { l: 48, r: 300, t: 20, b: 30 };
     as.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const x = k => m.l + 20 + k / 2 * (W - m.l - m.r - 40), y = v => m.t + (1 - (v + 0.7) / 1.4) * (H - m.t - m.b);
     const ax = svgEl('g', { class: 'axis' }, as);
@@ -390,7 +520,17 @@
   // ---------- K diagnostics
   (function kchart() {
     const svg = document.getElementById('ksvg'); if (!svg) return;
-    const W = 520, H = 220, m = { l: 36, r: 12, t: 18, b: 26 };
+    const W = 1100, H = 280, m = { l: 44, r: 12, t: 22, b: 28 };
+    {
+      const viz = document.getElementById('kviz');
+      Explain.guide(viz, [
+        'K is the number of profiles the clustering is asked to find. Each bar is one choice of K.',
+        'The <strong>silhouette score</strong> (0 to 1) measures how cleanly countries separate into groups. Higher is cleaner.',
+        'The highlighted bar is <strong>K = 4</strong>, the choice used in the thesis.'
+      ]);
+      const k4 = X.k.find(k => k.k === 4), k2 = X.k.find(k => k.k === 2);
+      Explain.takeaway(viz).set(`Two groups separate most cleanly (silhouette ${k2.sil.toFixed(2)}), but they only split rich from poor. Four profiles (silhouette ${k4.sil.toFixed(2)}) keep useful development tiers at a small cost in separation, so the groups overlap and are best read as a <b>typology</b>, not sharp categories.`);
+    }
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const ks = X.k, smax = Math.max(...ks.map(k => k.sil)) * 1.15, bw = (W - m.l - m.r) / ks.length;
     const y = v => m.t + (1 - v / smax) * (H - m.t - m.b);
@@ -428,12 +568,33 @@
       tip: iso => { const v = val(iso, cur); if (!C[iso]) return null; if (!v || v.ppi == null) return `<b>${C[iso].n}</b>${cur}: no PPI`; return `<b>${C[iso].n}</b>${cur}${v.prov ? ' · provisional' : ''}<br>PPI ${fmt(v.ppi)} · ${v.cl ? v.cl + ' · ' + CL[v.cl].label : 'no profile'}`; }
     });
     const leg = document.getElementById('map-legend'), note = document.getElementById('map-note');
+    const viz = document.getElementById('mapviz');
+    Explain.guide(viz, [
+      '<strong>Pressure index</strong>: darker green = less pressure, orange and red = more. <strong>Profile</strong>: colour = development profile.',
+      'Drag the slider or press <strong>▶</strong> to move through 1990–2023. Point at a country for its numbers.',
+      'Dark grey = not enough data that year. Years after 2023 are provisional live data.'
+    ]);
+    const RO = Explain.readout(viz), TK = Explain.takeaway(viz);
     function paint() {
       input.value = cur; out.textContent = cur;
       let n = 0;
       mp.paint(iso => { const v = val(iso, cur); if (!v) return null; const c = by === 'cl' ? (v.cl ? CL[v.cl].color : null) : (v.ppi == null ? null : ramp(v.ppi)); if (c) n++; return c; });
-      leg.innerHTML = by === 'cl' ? legendHTML() + '<span><i style="background:#1a1d22"></i>No data</span>' : `<span style="display:flex;align-items:center;gap:10px">PPI 10 <i style="width:180px;height:10px;background:linear-gradient(90deg,${[10, 30, 50, 70].map(ramp).join(',')})"></i> 70+</span><span><i style="background:#1a1d22"></i>No data</span>`;
+      leg.innerHTML = by === 'cl' ? legendHTML() + '<span><i style="background:#1a1d22"></i>No data</span>' : `<span style="display:flex;align-items:center;gap:10px">Less pressure · PPI ≤ 10 <i style="width:180px;height:10px;background:linear-gradient(90deg,${[10, 30, 50, 70].map(ramp).join(',')})"></i> PPI ≥ 70 · more pressure</span><span><i style="background:#1a1d22"></i>No data</span>`;
       note.textContent = `${cur}: ${n} countries shown${cur > Y1 ? ' · provisional values from the live World Bank feed' : SUM[cur] && SUM[cur].countries_with_ppi < 150 ? ' · partial coverage, compare with care' : ''}.`;
+      const vals = isos.map(i => [i, val(i, cur)]).filter(([, v]) => v && v.ppi != null).sort((p, q) => q[1].ppi - p[1].ppi);
+      if (!vals.length) return;
+      const mean = vals.reduce((a, [, v]) => a + v.ppi, 0) / vals.length, hi = vals[0], lo = vals[vals.length - 1];
+      const sh = K.map(c => vals.filter(([, v]) => v.cl === c).length), np = sh.reduce((a, b) => a + b, 0);
+      RO.set([
+        ['Year', cur, cur > Y1 ? 'provisional' : SUM[cur] && SUM[cur].countries_with_ppi < 150 ? 'partial coverage' : '', cur > Y1 || (SUM[cur] && SUM[cur].countries_with_ppi < 150) ? 'warn' : ''],
+        ['Countries', vals.length],
+        ['Mean PPI', fmt(mean), SUM[cur] && cur <= Y1 ? `95% CI ${fmt(SUM[cur].ci_low)}–${fmt(SUM[cur].ci_high)}` : 'no interval'],
+        ['Highest', fmt(hi[1].ppi), C[hi[0]].n],
+        ['Lowest', fmt(lo[1].ppi), C[lo[0]].n]
+      ]);
+      TK.set(by === 'ppi'
+        ? `In <b>${cur}</b> the highest pressure score was <b>${C[hi[0]].n}</b> (${fmt(hi[1].ppi)}) and the lowest <b>${C[lo[0]].n}</b> (${fmt(lo[1].ppi)}); the average across ${vals.length} countries was ${fmt(mean)}. Top five: ${vals.slice(0, 5).map(([i]) => C[i].n).join(', ')}.`
+        : `In <b>${cur}</b>, of ${np} profiled countries: ${K.map((c, k) => `${sh[k]} in ${c} (${CL[c].label.toLowerCase()})`).join(', ')}.`);
     }
     document.querySelectorAll('#mapviz [data-by]').forEach(b => b.addEventListener('click', () => { by = b.dataset.by; document.querySelectorAll('#mapviz [data-by]').forEach(z => z.setAttribute('aria-pressed', String(z === b))); paint(); }));
     const play = document.getElementById('map-play');
@@ -486,6 +647,15 @@
       });
       lv.forEach(([yy, v]) => { const dot = svgEl('circle', { cx: x(yy), cy: y(v), r: 3.4, fill: PANEL, stroke: SAGE, 'stroke-width': 1.5 }, svg); dot.addEventListener('pointerenter', e => showTip(`<b>${c.n} · ${yy} · provisional</b>${label}: ${disp(v)}`, e.clientX, e.clientY)); dot.addEventListener('pointerleave', hideTip); });
     }
+    const viz = document.getElementById('cviz');
+    Explain.guide(viz, [
+      'The <strong>strip</strong> shows the country\u2019s development profile in each year from 1990 (same colours as the map).',
+      'The four charts follow its <strong>pressure score</strong>, life expectancy, income and infant mortality. Point at any dot for the value.',
+      'Dots on the pressure chart take the profile colour. <strong>Hollow dots</strong> are provisional newer data.'
+    ]);
+    const RO = Explain.readout(viz), TK = Explain.takeaway(viz);
+    document.getElementById('c-strip').after(RO.el);
+    const firstLast = arr => { const f = arr.findIndex(v => v != null); let l = -1; arr.forEach((v, j) => { if (v != null) l = j; }); return f < 0 ? null : [f, l]; };
     function show(iso) {
       const c = C[iso];
       document.getElementById('c-name').textContent = c.n;
@@ -497,6 +667,17 @@
       strip.insertAdjacentHTML('beforeend', `<em>${Y0}</em><em>${Y1}</em>`);
       const grid = document.getElementById('c-grid'); grid.innerHTML = '';
       PANELS.forEach(([k, l, u, lv]) => spark(grid, c, iso, k, l, u, lv));
+      const fp = firstLast(c.ppi), fl = firstLast(c.le), fg = firstLast(c.gdp);
+      const path = c.cl.filter(Boolean).filter((k, j, a) => j === 0 || k !== a[j - 1]);
+      const dP = fp ? c.ppi[fp[1]] - c.ppi[fp[0]] : null, dL = fl ? c.le[fl[1]] - c.le[fl[0]] : null;
+      const gx = fg ? Math.exp(c.gdp[fg[1]] - c.gdp[fg[0]]) : null;
+      RO.set([
+        ['Pressure index', fp ? `${fmt(c.ppi[fp[0]])} → ${fmt(c.ppi[fp[1]])}` : 'n/a', fp ? `${Y0 + fp[0]}–${Y0 + fp[1]}` : '', dP == null ? '' : dP > 0 ? 'down' : 'up'],
+        ['Life expectancy', fl ? `${dL >= 0 ? '+' : ''}${fmt(dL)} yrs` : 'n/a', fl ? `${fmt(c.le[fl[0]])} → ${fmt(c.le[fl[1]])}` : '', dL > 0 ? 'up' : ''],
+        ['GDP per person', gx ? `×${fmt(gx, 1)}` : 'n/a', fg ? `$${Math.round(Math.exp(c.gdp[fg[0]])).toLocaleString('en-US')} → $${Math.round(Math.exp(c.gdp[fg[1]])).toLocaleString('en-US')}` : ''],
+        ['Profile path', path.length ? path.join(' → ') : 'n/a', path.length > 1 ? 'changed profile' : 'stable']
+      ]);
+      TK.set(fp && fl ? `<b>${c.n}</b>: life expectancy ${dL >= 0 ? 'rose' : 'fell'} from ${fmt(c.le[fl[0]])} to ${fmt(c.le[fl[1]])} years and income grew ${fmt(gx, 1)}-fold, while its pressure score went from ${fmt(c.ppi[fp[0]])} to <b>${fmt(c.ppi[fp[1]])}</b> (${dP >= 0 ? '+' : ''}${fmt(dP)} points). ${path.length > 1 ? `It moved through the profiles ${path.join(' → ')}.` : path.length ? `It stayed in ${path[0]} (${CL[path[0]].label.toLowerCase()}) throughout.` : ''}` : `Not enough data for ${c.n}.`);
     }
     show('IND');
   })();

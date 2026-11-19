@@ -15,8 +15,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/fraunces-300.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/site.css?v=20261119c">
-<link rel="stylesheet" href="assets/terra.css?v=20261119c">
+<link rel="stylesheet" href="assets/site.css?v=20261119d">
+<link rel="stylesheet" href="assets/terra.css?v=20261119d">
 </head>
 <body>
 <a class="skip" href="#question">Skip to content</a>
@@ -75,6 +75,12 @@
       <div class="stat"><b><span data-count="34">34</span></b><span>years of annual data, in three periods</span></div>
       <div class="stat"><b><span data-count="4">4</span></b><span>development–pressure profiles</span></div>
     </div>
+    <div class="primer">
+      <div data-reveal><span class="k">Idea 1 · The score</span><h3>Planetary Pressure Index</h3><p>One 0–100 score for how hard a country presses on the environment, built from six indicators. Higher means more pressure than other countries; it is relative to this sample, not a physical limit.</p><p class="eg">2022: Sweden 19.8 · India 41.6<br>United States 47.9 · Qatar 73.5<br>Average of 181 countries: 35.3</p></div>
+      <div data-reveal style="--d:.08s"><span class="k">Idea 2 · The groups</span><h3>Development profiles</h3><p>Countries grouped by how developed they are (income, health, cities) together with their pressure score, using k-means clustering. Four profiles, C1 to C4.</p><p class="eg">C1 low development, lower pressure<br>C4 high development, higher pressure<br>India 2022: C3 · United States: C4</p></div>
+      <div data-reveal style="--d:.16s"><span class="k">Idea 3 · The uncertainty</span><h3>Confidence interval</h3><p>The range a number would likely fall in if the data had come out slightly differently. Every estimate here is shown with its 95% interval; if a change’s interval includes zero, it is not statistically significant.</p><p class="eg">Mean PPI 2022: 35.3<br>95% CI 33.3 to 37.3</p></div>
+      <div data-reveal style="--d:.24s"><span class="k">Idea 4 · The link</span><h3>Correlation (r)</h3><p>How closely two measures move together across countries, from −1 to +1. Zero means no straight-line link. It describes a pattern, not a cause.</p><p class="eg">PPI vs life expectancy, 2022<br>r = 0.32 (moderate, positive)<br>95% CI 0.18 to 0.44</p></div>
+    </div>
   </div>
 </section>
 
@@ -98,9 +104,13 @@
 <!-- ============================== FINDINGS (year by year, with uncertainty) -->
 <section id="findings" class="band" aria-labelledby="f-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>03 · What the evidence shows</p>
-    <h2 class="h2" id="f-h" data-reveal>Better lives. <em>Unchanged</em> pressure.</h2>
-    <p class="lead" data-reveal>Every country-year from 1990 to 2023 is placed on the thesis's pooled PPI scale, so the story can be followed year by year. Each claim below comes with its uncertainty, computed in the repository's analysis code.</p>
+    <div class="split">
+      <div>
+        <p class="eyebrow" data-reveal>03 · What the evidence shows</p>
+        <h2 class="h2" id="f-h" data-reveal>Better lives. <em>Unchanged</em> pressure.</h2>
+      </div>
+      <p class="lead" data-reveal style="--d:.1s">Every country-year from 1990 to 2023 is placed on the thesis's pooled PPI scale, so the story can be followed year by year. The three cards are formal statistical tests; each verdict follows from its <span data-term="ci">95% confidence interval</span>.</p>
+    </div>
     <div class="tests" id="tests" data-reveal></div>
 
     <div class="viz" id="trendviz" style="margin-top:56px">
@@ -112,6 +122,7 @@
     </div>
 
     <div class="viz" id="scatterviz" style="margin-top:28px">
+      <div class="viz-head"><span class="viz-title">Pressure against life expectancy · every country, every year</span></div>
       <div class="viz-head">
         <div class="range"><button class="play" id="sc-play" aria-label="Play years">▶</button><input type="range" id="sc-year" min="1990" max="2023" value="1990" aria-label="Year"><output id="sc-out">1990</output></div>
         <span class="pill" id="sc-r"></span>
@@ -133,10 +144,15 @@
 <!-- ============================== FINGERPRINT -->
 <section id="fingerprint" class="band" style="padding-top:0" aria-labelledby="fp-h">
   <div class="wrap">
+    <div class="split">
+      <div>
     <p class="eyebrow" data-reveal>04 · Pressure fingerprints</p>
     <h2 class="h2" id="fp-h" data-reveal>Every country presses <em>differently</em></h2>
-    <p class="lead" data-reveal>Each petal is one indicator, scaled to the country's percentile among all countries in the chosen year: a longer petal means more pressure than most. Indicators a country did not report that year are left blank rather than drawn as zero. Recent years are thinner because several series are published two or more years late.</p>
+      </div>
+    <p class="lead" data-reveal style="--d:.1s">Each petal is one indicator, scaled to the country's percentile among all countries in the chosen year: a longer petal means more pressure than most. Indicators a country did not report that year are left blank rather than drawn as zero. Recent years are thinner because several series are published two or more years late.</p>
+    </div>
     <div class="viz" id="fpviz">
+      <div class="viz-head"><span class="viz-title">Pressure fingerprint · percentile among all countries in the year</span></div>
       <div class="viz-head">
         <div class="controls">
           <label class="search"><span class="sr">Country</span><select id="fp-a" aria-label="Country"></select></label>
@@ -167,8 +183,13 @@
 <!-- ============================== PATHWAYS -->
 <section id="pathways" class="band" aria-labelledby="p-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>06 · Pathways</p>
-    <h2 class="h2" id="p-h" data-reveal>Four profiles, <em>three decades</em></h2>
+    <div class="split">
+      <div>
+        <p class="eyebrow" data-reveal>06 · Pathways</p>
+        <h2 class="h2" id="p-h" data-reveal>Four profiles, <em>three decades</em></h2>
+      </div>
+      <p class="lead" data-reveal style="--d:.1s">Countries fall into four <span data-term="profile">development profiles</span>. As countries develop they tend to move up the ladder, from C1 towards C4, and pressure rises with them. These are the published results, estimated on decade averages.</p>
+    </div>
     <div class="cards" id="profiles" style="margin-top:32px"></div>
 
     <div class="viz" id="alluvial-viz" style="margin-top:56px">
@@ -177,9 +198,9 @@
       <p class="viz-note">The profiles were estimated on decade averages; the year-by-year shares above use the same centres. Moves record changes in model-assigned profile, not verified gains or losses in sustainability.</p>
     </div>
 
-    <div class="split" style="margin-top:72px">
+    <div style="margin-top:28px">
       <div class="viz" id="kviz"><div class="viz-head"><span class="viz-title">How many profiles? Silhouette by K</span></div><svg id="ksvg" aria-label="Silhouette score by number of clusters"></svg><p class="viz-note">Two groups separate more cleanly, but four keep useful development tiers. The thesis uses K = 4 and treats the profiles as a typology.</p></div>
-      <div class="viz" id="assocviz"><div class="viz-head"><span class="viz-title">Published period associations with the PPI</span></div><svg id="assoc" aria-label="Correlation of six outcomes with the PPI by period"></svg><p class="viz-note">Bivariate OLS of each outcome on the PPI. Filled points are significant at 5%; bars are 95% Fisher-z intervals.</p></div>
+      <div class="viz" id="assocviz" style="margin-top:28px"><div class="viz-head"><span class="viz-title">Published period associations with the PPI</span></div><svg id="assoc" aria-label="Correlation of six outcomes with the PPI by period"></svg><p class="viz-note">Bivariate OLS of each outcome on the PPI. Filled points are significant at 5%; bars are 95% Fisher-z intervals.</p></div>
     </div>
   </div>
 </section>
@@ -187,9 +208,15 @@
 <!-- ============================== MAP -->
 <section id="map-sec" class="band" aria-labelledby="w-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>07 · The map, year by year</p>
-    <h2 class="h2" id="w-h" data-reveal>Profiles and pressure, <em>1990 to 2023</em></h2>
+    <div class="split">
+      <div>
+        <p class="eyebrow" data-reveal>07 · The map, year by year</p>
+        <h2 class="h2" id="w-h" data-reveal>Profiles and pressure, <em>1990 to 2023</em></h2>
+      </div>
+      <p class="lead" data-reveal style="--d:.1s">Colour every country by its pressure score or by its development profile, and move through 34 years. Pressure is highest in the Gulf, much of Europe and North America; the green and blue profiles spread as countries develop.</p>
+    </div>
     <div class="viz" id="mapviz">
+      <div class="viz-head"><span class="viz-title">Planetary Pressure Index and profile · every country, 1990–2023</span></div>
       <div class="viz-head">
         <div class="range"><button class="play" id="map-play" aria-label="Play years">▶</button><input type="range" id="map-year" min="1990" max="2023" value="2022" aria-label="Year"><output id="map-out">2022</output></div>
         <div class="seg" role="group" aria-label="Colour by"><button aria-pressed="true" data-by="ppi">Pressure index</button><button aria-pressed="false" data-by="cl">Profile</button></div>
@@ -204,9 +231,15 @@
 <!-- ============================== COUNTRY -->
 <section id="countries" class="band" style="padding-top:0" aria-labelledby="c-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>08 · Country by country</p>
-    <h2 class="h2" id="c-h" data-reveal>One country, <em>every year</em></h2>
+    <div class="split">
+      <div>
+        <p class="eyebrow" data-reveal>08 · Country by country</p>
+        <h2 class="h2" id="c-h" data-reveal>One country, <em>every year</em></h2>
+      </div>
+      <p class="lead" data-reveal style="--d:.1s">Choose any of the 182 countries to follow its pressure score, health and income from 1990, and the development profile it belonged to each year.</p>
+    </div>
     <div class="viz" id="cviz">
+      <div class="viz-head"><span class="viz-title">Country profile · 1990–2023 and latest data</span></div>
       <div class="viz-head"><label class="search"><span class="sr">Country</span><select id="c-country" aria-label="Country"></select></label><div class="chips" id="c-quick"></div></div>
       <div class="pf-head"><div><b id="c-name">India</b><span id="c-sub"></span></div><div id="c-status"></div></div>
       <div class="pf-strip" id="c-strip" aria-label="Profile by year"></div>
@@ -231,7 +264,7 @@
 <!-- ============================== METHOD -->
 <section id="method" class="band" aria-labelledby="m-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>08 · Method and limits</p>
+    <p class="eyebrow" data-reveal>10 · Method and limits</p>
     <h2 class="h2" id="m-h" data-reveal>How it was done, <em>and what it cannot say</em></h2>
     <div class="split" style="margin-top:40px">
       <ol class="steps" data-reveal>
@@ -253,10 +286,21 @@
   </div>
 </section>
 
+<!-- ============================== GLOSSARY -->
+<section id="glossary" class="band" style="padding-top:0" aria-labelledby="gl-h">
+  <div class="wrap">
+    <div class="split">
+      <div><p class="eyebrow" data-reveal>11 · Glossary</p><h2 class="h2" id="gl-h" data-reveal>Every term, <em>in plain words</em></h2></div>
+      <p class="muted" data-reveal style="--d:.1s">The same definitions appear when you point at an underlined word anywhere on the page.</p>
+    </div>
+    <dl class="gloss" id="gloss" data-reveal></dl>
+  </div>
+</section>
+
 <!-- ============================== FIGURES -->
 <section id="figures" class="band" style="padding-top:0" aria-labelledby="g-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>09 · Original figures</p>
+    <p class="eyebrow" data-reveal>12 · Original figures</p>
     <h2 class="h2" id="g-h" data-reveal>The evidence, <em>in full view</em></h2>
     <div class="gallery" style="margin-top:36px">
       <figure data-reveal><button data-zoom="preview.png" data-cap="Planetary pressure and life expectancy, 2011–2023"><img src="preview.png" alt="Planetary pressure and life expectancy, 2011–2023" loading="lazy"></button><figcaption>Pressure and life expectancy</figcaption></figure>
@@ -297,12 +341,12 @@
 
 <dialog class="lightbox" aria-label="Figure"><button aria-label="Close">×</button><img alt=""><p></p></dialog>
 
-<script src="thesis-data.js?v=20261119c"></script>
+<script src="thesis-data.js?v=20261119d"></script>
 <script src="assets/vendor/d3-array.min.js"></script>
 <script src="assets/vendor/d3-geo.min.js"></script>
 <script src="assets/vendor/topojson-client.min.js"></script>
-<script src="assets/site.js?v=20261119c"></script>
-<script src="assets/map.js?v=20261119c"></script>
-<script src="assets/thesis.js?v=20261119c"></script>
+<script src="assets/site.js?v=20261119d"></script>
+<script src="assets/map.js?v=20261119d"></script>
+<script src="assets/thesis.js?v=20261119d"></script>
 </body>
 </html>

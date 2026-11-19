@@ -1,1 +1,1 @@
-three.js (MIT), d3-geo and d3-array (ISC), topojson-client (ISC), world-atlas (ISC, Natural Earth public domain), Barlow fonts (SIL Open Font License 1.1). Earth textures: NASA Blue Marble / Black Marble (public domain), distributed with three-globe (MIT).
+three.js (MIT), d3-geo and d3-array (ISC), topojson-client (ISC), world-atlas (ISC, Natural Earth public domain), Barlow and IBM Plex Mono fonts (SIL Open Font License 1.1). Earth textures: NASA Blue Marble / Black Marble (public domain), distributed with three-globe (MIT).
