@@ -1,7 +1,7 @@
 /* Thesis site ("Terra"): plates, findings, beeswarm, scatter, fingerprints, profiles, alluvial, associations, K, map. */
 (async function () {
   if (typeof THESIS === 'undefined') return;
-  const X = await fetch('data/thesis-extra.json').then(r => r.json());
+  const X = await fetch('data/thesis-extra.json?v=20261119').then(r => r.json());
   const P = THESIS.periods, CL = THESIS.clusters, K = ['C1', 'C2', 'C3', 'C4'];
   const A = THESIS_ANNUAL, COL = Object.fromEntries(A.columns.map((c, i) => [c, i]));
   const fmt = (v, n = 1) => (v == null || !isFinite(v) ? 'n/a' : (+v).toLocaleString('en-US', { maximumFractionDigits: n, minimumFractionDigits: n }));
