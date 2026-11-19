@@ -6,7 +6,7 @@
 <title>Development. At What Planetary Cost? · SAHIL</title>
 <meta name="description" content="Planetary Boundary Transgressions and Divergent Socio-Economic Pathways: a world-level study of planetary pressure and development across 182 countries, 1990–2023. Undergraduate thesis by SAHIL, TISS Mumbai.">
 <meta name="author" content="SAHIL">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#f3efe6">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Development. At what planetary cost?">
 <meta property="og:description" content="A world-level study of planetary pressure and development, 182 countries, 1990–2023.">
@@ -14,8 +14,9 @@
 <meta property="og:url" content="https://sahiljangra12.github.io/Thesis/">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/img/icon.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/barlow-condensed-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/fraunces-300.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/terra.css">
 </head>
 <body>
 <a class="skip" href="#question">Skip to content</a>
@@ -24,11 +25,12 @@
   <a class="brand" href="#top" aria-label="Sahil, home">SAHIL<small>Research</small></a>
   <nav aria-label="Sections">
     <ul id="menu">
-      <li><a href="#question">The question</a></li>
+      <li><a href="#question">Question</a></li>
+      <li><a href="#plates">Pressures</a></li>
       <li><a href="#findings">Findings</a></li>
-      <li><a href="#world">The world</a></li>
-      <li><a href="#index">The index</a></li>
+      <li><a href="#fingerprint">Fingerprints</a></li>
       <li><a href="#pathways">Pathways</a></li>
+      <li><a href="#map-sec">Map</a></li>
       <li><a href="#method">Method</a></li>
       <li><a href="explorer.html">Explorer</a></li>
     </ul>
@@ -37,190 +39,191 @@
 </header>
 
 <main>
-<!-- ============================== HERO -->
+<!-- ============================== HERO (photographic) -->
 <section class="hero" id="top" aria-label="Introduction">
-  <img class="poster" src="assets/img/hero-day.jpg" alt="" aria-hidden="true">
-  <canvas id="globe" aria-hidden="true"></canvas>
+  <div class="photo" style="background-image:url(assets/img/hero-day.jpg)" role="img" aria-label="Earth from orbit over North Africa and the Mediterranean"></div>
   <div class="inner">
-    <p class="eyebrow" data-reveal>Undergraduate thesis · TISS Mumbai · 1990–2023</p>
-    <h1 class="display"><span class="mask"><span>Development.</span></span><span class="mask"><span style="--d:.12s">At what</span></span><span class="mask"><span style="--d:.24s">planetary cost?</span></span></h1>
-    <p class="lead" data-reveal style="--d:.5s">Planetary Boundary Transgressions and Divergent Socio-Economic Pathways: a world-level study of environmental pressure and human development across 182 countries.</p>
+    <p class="eyebrow" data-reveal>Undergraduate thesis · Tata Institute of Social Sciences · 1990–2023</p>
+    <h1 class="display"><span class="mask"><span>Development.</span></span><span class="mask"><span style="--d:.14s"><em>At what</em></span></span><span class="mask"><span style="--d:.28s">planetary cost?</span></span></h1>
+    <p class="lead" data-reveal style="--d:.5s">Planetary Boundary Transgressions and Divergent Socio-Economic Pathways. A world-level study of environmental pressure and human development across 182 countries.</p>
     <div class="btns" data-reveal style="--d:.65s">
-      <a class="btn" href="#findings">See the findings <span class="arr">→</span></a>
+      <a class="btn" href="#findings">Read the findings <span class="arr">→</span></a>
       <a class="btn ghost" href="explorer.html">Open the explorer</a>
     </div>
   </div>
-  <a class="scroll-cue" href="#numbers" aria-label="Scroll to key numbers"></a>
+  <a class="scroll-cue" href="#question" aria-label="Scroll down"></a>
 </section>
-
-<!-- ============================== NUMBERS -->
-<section id="numbers" class="band tight" aria-label="The study in numbers">
-  <div class="wrap">
-    <div class="stats" data-reveal>
-      <div class="stat"><b><span data-count="182">182</span></b><span>countries: UN member states and the State of Palestine</span></div>
-      <div class="stat"><b><span data-count="6">6</span></b><span>environmental-pressure indicators in one Planetary Pressure Index</span></div>
-      <div class="stat"><b><span data-count="34">34</span><small>years</small></b><span>of annual data, 1990–2023, in three periods</span></div>
-      <div class="stat"><b><span data-count="4">4</span></b><span>development–pressure profiles from one pooled clustering model</span></div>
-    </div>
-  </div>
-</section>
-
-<div class="marquee" aria-hidden="true"><div>
-  <span>Renewable energy</span><span>Forest cover</span><span>Agricultural land</span><span>Fertiliser use</span><span>PM2.5 exposure</span><span>Energy use per person</span><span>Life expectancy</span><span>Income</span><span>Urbanisation</span>
-  <span>Renewable energy</span><span>Forest cover</span><span>Agricultural land</span><span>Fertiliser use</span><span>PM2.5 exposure</span><span>Energy use per person</span><span>Life expectancy</span><span>Income</span><span>Urbanisation</span>
-</div></div>
 
 <!-- ============================== QUESTION -->
 <section id="question" class="band" aria-labelledby="q-h">
-  <div class="wrap">
-    <p class="eyebrow" data-reveal>01 / The question</p>
-    <h2 class="h2" id="q-h" data-reveal>Do better lives cost the planet more?</h2>
-    <div class="cards three" style="margin-top:48px">
-      <div class="card" data-reveal><span class="num">01 / The question</span><h3>Development at what cost?</h3><p>Do countries with better living conditions also place more pressure on the planet?</p></div>
-      <div class="card" data-reveal style="--d:.08s"><span class="num">02 / The measurement</span><h3>Make countries comparable</h3><p>The Planetary Pressure Index combines six environmental-pressure indicators on one 0–100 scale shared by all three periods.</p></div>
-      <div class="card" data-reveal style="--d:.16s"><span class="num">03 / The analysis</span><h3>Look for shared pathways</h3><p>Countries are grouped into exploratory profiles by pressure, income, health and urbanisation, and followed over time. Patterns, not proof of cause.</p></div>
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow" data-reveal>01 · The question</p>
+      <h2 class="h2" id="q-h" data-reveal>Do better lives <em>cost the planet</em> more?</h2>
+    </div>
+    <div data-reveal style="--d:.12s">
+      <p class="lead dropcap">Countries have grown richer, healthier and more urban since 1990. This study asks whether that progress has come with more pressure on the planet, and whether countries follow shared pathways of development and pressure over three decades.</p>
+      <p class="muted">It combines six environmental-pressure indicators into one Planetary Pressure Index (PPI), groups countries into development–pressure profiles, and follows them across 1990–2000, 2001–2010 and 2011–2023.</p>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:64px">
+    <div class="stats" data-reveal>
+      <div class="stat"><b><span data-count="182">182</span></b><span>countries: UN member states and the State of Palestine</span></div>
+      <div class="stat"><b><span data-count="6">6</span></b><span>pressure indicators in one 0–100 index</span></div>
+      <div class="stat"><b><span data-count="34">34</span></b><span>years of annual data, in three periods</span></div>
+      <div class="stat"><b><span data-count="4">4</span></b><span>development–pressure profiles</span></div>
     </div>
   </div>
 </section>
 
-<!-- ============================== SCENE -->
-<section class="scene" aria-label="Headline">
-  <div class="bg" style="background-image:url(assets/img/scene-limb.jpg)"></div>
-  <div class="inner"><div>
-    <p class="eyebrow" data-reveal>02 / The headline</p>
-    <p class="quote" data-reveal>Better living conditions. Persistent measured pressure.</p>
-    <p class="lead" data-reveal style="--d:.15s;margin-top:22px">More developed profiles have longer lives, higher incomes and more urbanisation, alongside higher planetary pressure. The link weakens over time, but average pressure does not fall.</p>
-  </div></div>
+<!-- ============================== PLATES -->
+<section id="plates" class="band ink" aria-labelledby="pl-h">
+  <div class="wrap">
+    <div class="split">
+      <div><p class="eyebrow" data-reveal style="color:#d9c9a3">02 · Six pressures, seen from orbit</p>
+      <h2 class="h2" id="pl-h" data-reveal>Forests, fields, <em>air</em> and energy</h2></div>
+      <p class="muted" data-reveal style="--d:.1s">The index combines renewable energy share and forest cover (both reversed: less means more pressure), agricultural land, fertiliser use, fine-particle air pollution and energy use per person. Each is standardised, averaged when at least four are available, and rescaled to 0–100 across all periods. Values below are 2011–2023 averages from the thesis dataset.</p>
+    </div>
+    <div class="plates" id="plates-grid">
+      <figure class="plate" data-reveal><img src="assets/img/plate-amazon.jpg" alt="The Amazon basin from orbit" loading="lazy"><figcaption><span>Forest cover · Brazil</span><b data-ind="BRA:forest_pct:%">–</b><small>of land is forest. Less forest adds pressure.</small></figcaption></figure>
+      <figure class="plate" data-reveal style="--d:.08s"><img src="assets/img/plate-india.jpg" alt="The Indian subcontinent from orbit" loading="lazy"><figcaption><span>Fertiliser use · India</span><b data-ind="IND:fertilizer: kg/ha">–</b><small>per hectare of arable land. More fertiliser adds pressure.</small></figcaption></figure>
+      <figure class="plate" data-reveal style="--d:.16s"><img src="assets/img/plate-europe.jpg" alt="Western Europe from orbit" loading="lazy"><figcaption><span>Energy use · Germany</span><b data-ind="DEU:energy_use_pc: kgoe">–</b><small>per person per year. More energy use adds pressure.</small></figcaption></figure>
+      <figure class="plate" data-reveal style="--d:.24s"><img src="assets/img/plate-sahel.jpg" alt="The Sahara and Sahel from orbit" loading="lazy"><figcaption><span>Air pollution · Niger</span><b data-ind="NER:pm25: µg/m³">–</b><small>mean PM2.5 exposure, much of it desert dust. Higher exposure adds pressure.</small></figcaption></figure>
+    </div>
+  </div>
 </section>
 
 <!-- ============================== FINDINGS -->
 <section id="findings" class="band" aria-labelledby="f-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>03 / What the study finds</p>
-    <h2 class="h2" id="f-h" data-reveal>Three numbers that tell the story</h2>
+    <p class="eyebrow" data-reveal>03 · What the study finds</p>
+    <h2 class="h2" id="f-h" data-reveal>Better lives. <em>Persistent</em> pressure.</h2>
     <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-top:40px" data-reveal>
-      <div class="stat"><b><span data-count="0.40" data-dec="2">0.40</span> → <span data-count="0.25" data-dec="2" data-from="0.40">0.25</span></b><span>Correlation between pressure and life expectancy, 1990–2000 to 2011–2023. The link weakens over time.</span></div>
-      <div class="stat"><b style="font-size:clamp(34px,3.6vw,54px)">35.2 · 35.0 · 35.6</b><span>Mean Planetary Pressure Index in the three periods. Average pressure stays roughly flat.</span></div>
-      <div class="stat"><b><span data-count="0.25" data-dec="2">0.25</span></b><span>Silhouette score for four profiles. They overlap: broad patterns, not sharply separated categories.</span></div>
+      <div class="stat"><b id="f-r">0.40 → 0.25</b><span>Correlation between pressure and life expectancy, 1990–2000 to 2011–2023. The link weakens.</span></div>
+      <div class="stat"><b id="f-ppi">35.2 · 35.0 · 35.6</b><span>Mean PPI in the three periods. Average pressure stays roughly flat.</span></div>
+      <div class="stat"><b id="f-sil">0.25</b><span>Silhouette score for four profiles: broad, overlapping patterns, not sharp categories.</span></div>
     </div>
-    <p class="viz-note">These are associations, not causal effects. Version 2.0 corrects the original thesis analysis: a sovereign-state sample matched by ISO3 code, aligned period labels, one pooled 0–100 PPI scale, one pooled clustering model with logged GDP, and a log-GDP regression matching its label.</p>
 
-    <div class="viz" id="scatterviz" style="margin-top:72px">
+    <div class="viz" id="swarmviz" style="margin-top:72px">
+      <div class="viz-head"><span class="viz-title">Planetary Pressure Index by period · each dot is a country</span></div>
+      <svg id="swarm" aria-label="Beeswarm of PPI values by period, coloured by profile"></svg>
+      <div class="legend" id="swarm-legend"></div>
+      <p class="viz-note">The line marks each period's mean. The spread is wide and the centre barely moves.</p>
+    </div>
+
+    <div class="viz" id="scatterviz" style="margin-top:28px">
       <div class="viz-head">
-        <span class="viz-title">Planetary pressure and life expectancy</span>
-        <div class="controls"><button class="play" id="sc-play" aria-label="Play periods">▶</button>
-          <div class="seg" role="group" aria-label="Period" id="sc-periods"></div></div>
+        <span class="viz-title">Pressure and life expectancy</span>
+        <div class="controls"><button class="play" id="sc-play" aria-label="Play periods">▶</button><div class="seg" role="group" aria-label="Period" id="sc-periods"></div></div>
       </div>
-      <svg id="scatter" aria-label="Scatter plot of Planetary Pressure Index against life expectancy by period"></svg>
+      <svg id="scatter" aria-label="Scatter of PPI against life expectancy by period"></svg>
       <div class="legend" id="sc-legend"></div>
-      <p class="viz-note">Each circle is a country, sized by population and coloured by its development–pressure profile in that period. Hover for details.</p>
+      <p class="viz-note">Circles are sized by population and coloured by profile in that period.</p>
     </div>
   </div>
 </section>
 
-<!-- ============================== WORLD -->
-<section id="world" class="band" style="padding-top:0" aria-labelledby="w-h">
+<!-- ============================== FINGERPRINT -->
+<section id="fingerprint" class="band" style="padding-top:0" aria-labelledby="fp-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>04 / The world, period by period</p>
-    <h2 class="h2" id="w-h" data-reveal>Four profiles, one map</h2>
-    <div class="viz" id="mapviz">
+    <p class="eyebrow" data-reveal>04 · Pressure fingerprints</p>
+    <h2 class="h2" id="fp-h" data-reveal>Every country presses <em>differently</em></h2>
+    <p class="lead" data-reveal>Each petal is one indicator, scaled to the country's percentile among all countries in 2011–2023: a longer petal means more pressure than most. Compare any two countries.</p>
+    <div class="viz" id="fpviz">
       <div class="viz-head">
-        <div class="controls"><button class="play" id="map-play" aria-label="Play periods">▶</button><div class="seg" role="group" aria-label="Period" id="map-periods"></div></div>
-        <div class="seg" role="group" aria-label="Colour by"><button aria-pressed="true" data-by="cl">Profile</button><button aria-pressed="false" data-by="ppi">Pressure index</button></div>
+        <div class="controls">
+          <label class="search"><span class="sr">Country</span><select id="fp-a" aria-label="Country"></select></label>
+          <span class="muted small">vs</span>
+          <label class="search"><span class="sr">Compare with</span><select id="fp-b" aria-label="Compare with"></select></label>
+        </div>
+        <div class="chips" id="fp-quick"></div>
       </div>
-      <svg id="map" aria-label="World map of development–pressure profiles"></svg>
-      <div class="legend" id="map-legend"></div>
+      <div class="fp">
+        <svg id="fp-svg" aria-label="Petal chart of pressure percentiles"></svg>
+        <div class="fp-side"><h3 id="fp-name">India</h3><p class="meta" id="fp-meta"></p><ul class="fp-list" id="fp-list"></ul></div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ============================== INDEX -->
-<section id="index" class="band" style="background:linear-gradient(#000,#05080d 40%,#000)" aria-labelledby="i-h">
-  <div class="wrap">
-    <div class="split">
-      <div data-reveal>
-        <p class="eyebrow">05 / The Planetary Pressure Index</p>
-        <h2 class="h2" id="i-h">Six pressures. One comparable scale.</h2>
-        <p class="muted">Planetary boundaries describe environmental limits for human activity and motivate the study. The PPI is an exploratory, comparative proxy built from six selected indicators: z-scores, averaged when at least four are available, rescaled to 0–100 across all periods. It is not a direct measurement of the nine boundaries, and its scale is not the percentage of a boundary crossed.</p>
-      </div>
-      <div class="cards three" style="grid-template-columns:1fr 1fr">
-        <div class="card" data-reveal><span class="num">↓ reversed</span><h3>Renewable energy share</h3><p>A smaller renewable share adds pressure.</p></div>
-        <div class="card" data-reveal style="--d:.06s"><span class="num">↓ reversed</span><h3>Forest cover</h3><p>Less forest cover adds pressure.</p></div>
-        <div class="card" data-reveal style="--d:.12s"><span class="num">↑</span><h3>Agricultural land</h3><p>A larger agricultural share means more pressure on land systems.</p></div>
-        <div class="card" data-reveal style="--d:.18s"><span class="num">↑</span><h3>Fertiliser use</h3><p>More fertiliser per hectare adds pressure.</p></div>
-        <div class="card" data-reveal style="--d:.24s"><span class="num">↑</span><h3>PM2.5 exposure</h3><p>More fine-particle air pollution adds pressure.</p></div>
-        <div class="card" data-reveal style="--d:.3s"><span class="num">↑</span><h3>Energy use per person</h3><p>More energy per person adds pressure.</p></div>
-      </div>
-    </div>
-  </div>
+<!-- ============================== SCENE -->
+<section class="scene" aria-label="Interlude">
+  <div class="bg" style="background-image:url(assets/img/scene-limb.jpg)"></div>
+  <div class="inner"><div>
+    <p class="eyebrow" data-reveal>05 · The pattern</p>
+    <p class="quote" data-reveal>Development improves. <em>Pressure does not disappear.</em></p>
+    <p class="lead" data-reveal style="--d:.15s;margin-top:22px">More developed profiles have longer lives, higher incomes and more urbanisation, alongside higher pressure. A weaker link is not evidence that development has become independent of it.</p>
+  </div></div>
 </section>
 
 <!-- ============================== PATHWAYS -->
 <section id="pathways" class="band" aria-labelledby="p-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>06 / Pathways</p>
-    <h2 class="h2" id="p-h" data-reveal>Four development–pressure profiles</h2>
-    <p class="lead" data-reveal>Pooled cluster centres, rounded. Typical GDP per person runs from about $500 to $25,000 across the four profiles.</p>
+    <p class="eyebrow" data-reveal>06 · Pathways</p>
+    <h2 class="h2" id="p-h" data-reveal>Four profiles, <em>three decades</em></h2>
     <div class="cards" id="profiles" style="margin-top:32px"></div>
 
-    <div class="split" style="margin-top:96px">
-      <div data-reveal>
-        <h3 class="h2" style="font-size:clamp(28px,3.4vw,46px)">Who moved, and where?</h3>
-        <p class="muted">72% of countries stayed in the same profile in the first transition and 70% in the second. Of 102 recorded moves, 101 were towards a more developed profile. The move from lower-middle development with lower pressure (C2) to upper-middle development with higher pressure (C3) happened 18 times in each comparison: 36 moves into a higher-pressure profile.</p>
-        <div class="seg" role="group" aria-label="Transition" id="tr-seg" style="margin-top:12px"><button aria-pressed="true" data-t="0">1990s → 2000s</button><button aria-pressed="false" data-t="1">2000s → 2011–23</button></div>
-      </div>
-      <div class="viz" id="trviz"><div class="viz-head"><span class="viz-title">Country counts · row = origin, column = destination</span></div><div id="trmat"></div></div>
+    <div class="viz" id="alluvial-viz" style="margin-top:56px">
+      <div class="viz-head"><span class="viz-title">Where countries moved between profiles</span><span class="muted small" id="alluvial-note"></span></div>
+      <svg id="alluvial" aria-label="Alluvial diagram of profile changes across the three periods"></svg>
+      <p class="viz-note">Bands show countries grouped in consecutive periods. Hover a band for its count. Moves record changes in model-assigned profile, not verified gains or losses in sustainability.</p>
     </div>
 
-    <div class="split" style="margin-top:96px">
-      <div class="viz" id="assocviz"><div class="viz-head"><span class="viz-title">Correlation with the PPI, by period</span></div><svg id="assoc" aria-label="Correlation of six outcomes with the PPI across three periods"></svg><p class="viz-note">Bivariate OLS of each outcome on the PPI; r is the correlation coefficient.</p></div>
+    <div class="split" style="margin-top:72px">
+      <div class="viz" id="assocviz"><div class="viz-head"><span class="viz-title">Correlation with the PPI, by period</span></div><svg id="assoc" aria-label="Correlation of six outcomes with the PPI"></svg><p class="viz-note">Bivariate OLS of each outcome on the PPI. Filled points are significant at 5%.</p></div>
       <div data-reveal>
-        <h3 class="h2" style="font-size:clamp(28px,3.4vw,46px)">The associations weaken</h3>
-        <p class="muted">Income, life expectancy and urbanisation are positively associated with pressure in every period, and infant mortality negatively (all p &lt; 0.05). Female labour-force participation is negatively associated. Unemployment shows no statistically significant association in any period. Every link is weaker in 2011–2023 than in the 1990s.</p>
+        <h3 class="h2" style="font-size:clamp(28px,3.2vw,44px)">The associations <em>weaken</em></h3>
+        <p class="muted">Income, life expectancy and urbanisation are positively associated with pressure in every period, and infant mortality negatively. Female labour-force participation is negatively associated; unemployment shows no significant association in any period.</p>
+        <div class="viz" id="kviz" style="margin-top:24px"><div class="viz-head"><span class="viz-title">How many profiles? Silhouette by K</span></div><svg id="ksvg" aria-label="Silhouette score by number of clusters"></svg><p class="viz-note">Two groups separate more cleanly (higher score), but four keep useful development tiers. The thesis uses K = 4 and treats the profiles as a typology.</p></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============================== SCENE 2 -->
-<section class="scene right" aria-label="Interpretation">
-  <div class="bg" style="background-image:url(assets/img/scene-globe.jpg)"></div>
-  <div class="inner"><div>
-    <p class="eyebrow" data-reveal>07 / What it means</p>
-    <p class="quote" data-reveal>Development improves. Pressure does not disappear.</p>
-    <p class="lead" data-reveal style="--d:.15s;margin-top:22px">A weaker association alone is not evidence that development has become independent of environmental pressure.</p>
-    <div class="btns" data-reveal style="--d:.3s"><a class="btn" href="explorer.html">Open the full explorer <span class="arr">→</span></a></div>
-  </div></div>
+<!-- ============================== MAP -->
+<section id="map-sec" class="band ink" aria-labelledby="w-h">
+  <div class="wrap">
+    <p class="eyebrow" data-reveal style="color:#d9c9a3">07 · The map</p>
+    <h2 class="h2" id="w-h" data-reveal>Profiles and pressure, <em>period by period</em></h2>
+    <div class="viz" id="mapviz">
+      <div class="viz-head">
+        <div class="controls"><button class="play" id="map-play" aria-label="Play periods" style="color:#fff">▶</button><div class="seg" role="group" aria-label="Period" id="map-periods"></div></div>
+        <div class="seg" role="group" aria-label="Colour by"><button aria-pressed="false" data-by="cl">Profile</button><button aria-pressed="true" data-by="ppi">Pressure index</button></div>
+      </div>
+      <svg id="map" aria-label="World map"></svg>
+      <div class="legend" id="map-legend"></div>
+    </div>
+  </div>
 </section>
 
 <!-- ============================== METHOD -->
 <section id="method" class="band" aria-labelledby="m-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>08 / Method and limits</p>
-    <h2 class="h2" id="m-h" data-reveal>How it was done, and what it cannot say</h2>
+    <p class="eyebrow" data-reveal>08 · Method and limits</p>
+    <h2 class="h2" id="m-h" data-reveal>How it was done, <em>and what it cannot say</em></h2>
     <div class="split" style="margin-top:40px">
       <ol class="steps" data-reveal>
         <li><div><h3>Standardise and combine</h3><p>Z-scores put six indicators on one scale; their average forms the PPI when at least four are available, rescaled to 0–100 for every period.</p></div></li>
-        <li><div><h3>Group comparable profiles</h3><p>One k-means model on all country-periods, using PPI, log GDP per person, life expectancy, infant mortality and urbanisation, with K = 4.</p></div></li>
-        <li><div><h3>Track transitions</h3><p>The same model assigns profiles in each period, so moves between profiles can be counted for countries grouped in both periods.</p></div></li>
-        <li><div><h3>Examine associations</h3><p>Separate bivariate least-squares regressions relate each outcome to the PPI in each period.</p></div></li>
+        <li><div><h3>Group comparable profiles</h3><p>One k-means model on all country-periods using PPI, log GDP per person, life expectancy, infant mortality and urbanisation, with K = 4.</p></div></li>
+        <li><div><h3>Track transitions</h3><p>The same model assigns profiles in each period, so moves can be counted for countries grouped in both periods.</p></div></li>
+        <li><div><h3>Examine associations</h3><p>Separate bivariate least-squares regressions of each outcome on the PPI, period by period.</p></div></li>
       </ol>
       <ul class="steps" data-reveal style="--d:.1s">
         <li><div><h3>Associations, not causes</h3><p>The analysis identifies cross-country patterns. It does not show that pressure causes better living conditions, or that reducing pressure lowers development.</p></div></li>
-        <li><div><h3>A proxy, not a boundary</h3><p>The PPI is relative to this sample. A flat country mean does not mean total global pressure is unchanged.</p></div></li>
-        <li><div><h3>Profiles are a typology</h3><p>Assignments depend on the chosen features, scaling and K; a silhouette of 0.25 means the groups overlap.</p></div></li>
+        <li><div><h3>A proxy, not a boundary</h3><p>The PPI is relative to this sample, not a direct measurement of the nine planetary boundaries. A flat mean does not mean total global pressure is unchanged.</p></div></li>
+        <li><div><h3>Profiles are a typology</h3><p>Assignments depend on the features, scaling and K; a silhouette of 0.25 means the groups overlap.</p></div></li>
         <li><div><h3>Many tests</h3><p>Eighteen regressions are reported without multiple-comparison adjustment; significance alone does not show practical importance.</p></div></li>
       </ul>
     </div>
-    <p class="viz-note" style="margin-top:28px">Sources: World Bank World Development Indicators, FAOSTAT, WHO Global Health Observatory, ILOSTAT and UNDP Human Development Reports. The original thesis analysis is preserved on the <code>v1.0-thesis</code> branch.</p>
+    <p class="viz-note" style="margin-top:28px">Sources: World Bank World Development Indicators, FAOSTAT, WHO Global Health Observatory, ILOSTAT and UNDP Human Development Reports. The original thesis analysis is preserved on the <code>v1.0-thesis</code> branch; version 2.0 corrections are documented in the repository.</p>
   </div>
 </section>
 
 <!-- ============================== FIGURES -->
 <section id="figures" class="band" style="padding-top:0" aria-labelledby="g-h">
   <div class="wrap">
-    <p class="eyebrow" data-reveal>09 / Original figures</p>
-    <h2 class="h2" id="g-h" data-reveal>The evidence, in full view</h2>
+    <p class="eyebrow" data-reveal>09 · Original figures</p>
+    <h2 class="h2" id="g-h" data-reveal>The evidence, <em>in full view</em></h2>
     <div class="gallery" style="margin-top:36px">
       <figure data-reveal><button data-zoom="preview.png" data-cap="Planetary pressure and life expectancy, 2011–2023"><img src="preview.png" alt="Planetary pressure and life expectancy, 2011–2023" loading="lazy"></button><figcaption>Pressure and life expectancy</figcaption></figure>
       <figure data-reveal style="--d:.06s"><button data-zoom="figures/fig2_ppi_by_period.png" data-cap="PPI by period"><img src="figures/fig2_ppi_by_period.png" alt="PPI by period" loading="lazy"></button><figcaption>PPI by period</figcaption></figure>
@@ -235,10 +238,10 @@
 <!-- ============================== CTA -->
 <section class="band" style="border-top:1px solid var(--line)" aria-label="Code and data">
   <div class="wrap split">
-    <h2 class="h2" data-reveal>Open data. Open code.</h2>
+    <h2 class="h2" data-reveal>Open data. <em>Open code.</em></h2>
     <div data-reveal style="--d:.1s">
       <p class="muted">The dataset, analysis code, tests and results tables are public, with every change from the original thesis documented.</p>
-      <div class="btns"><a class="btn" href="https://github.com/sahiljangra12/Thesis">Code and data <span class="arr">→</span></a><a class="btn ghost" href="https://github.com/sahiljangra12/Thesis/blob/main/docs/method-changes.md">Method changes</a><a class="btn ghost" href="https://sahiljangra12.github.io/planetary-pathways/">Next: the climate study</a></div>
+      <div class="btns"><a class="btn" href="https://github.com/sahiljangra12/Thesis">Code and data <span class="arr">→</span></a><a class="btn ghost" href="https://github.com/sahiljangra12/Thesis/blob/main/docs/method-changes.md">Method changes</a><a class="btn ghost" href="https://sahiljangra12.github.io/planetary-pathways/">Next study: climate boundary</a></div>
     </div>
   </div>
 </section>
@@ -254,7 +257,7 @@
       <li><a href="https://sahiljangra12.github.io/planetary-pathways/">Climate study</a></li>
       <li><a href="ppi-chart.html">Original chart</a></li>
     </ul>
-    <p class="small" style="flex-basis:100%;margin:12px 0 0;color:var(--dim)">Earth imagery: NASA Blue Marble (public domain). Data: World Bank WDI, FAOSTAT, WHO GHO, ILOSTAT, UNDP HDR. Associations, not causal effects.</p>
+    <p class="small" style="flex-basis:100%;margin:12px 0 0;color:#8f8a7c">Earth imagery: NASA Blue Marble (public domain), rendered for this site. Data: World Bank WDI, FAOSTAT, WHO GHO, ILOSTAT, UNDP HDR. Associations, not causal effects.</p>
   </div>
 </footer>
 
@@ -267,16 +270,5 @@
 <script src="assets/site.js"></script>
 <script src="assets/map.js"></script>
 <script src="assets/thesis.js"></script>
-<script type="module">
-  import { mountGlobe } from './assets/globe.js';
-  (async () => {
-    const world = await fetch('assets/world.json').then(r => r.json());
-    const P = THESIS.periods[THESIS.periods.length - 1];
-    const points = THESIS.rows[P].filter(r => r.cl && world.centroid[r.iso3]).map(r => ({
-      lon: world.centroid[r.iso3][0], lat: world.centroid[r.iso3][1], color: THESIS.clusters[r.cl].color, size: Math.min(1, (r.ppi || 0) / 70)
-    }));
-    mountGlobe(document.getElementById('globe'), { texture: 'assets/img/earth-blue-marble-2k.jpg', bump: 'assets/img/earth-bump.jpg', sun: true, atmosphere: 0x6cb8ff, startLon: 20, tilt: 0.36, offsetX: 0.45, points });
-  })();
-</script>
 </body>
 </html>

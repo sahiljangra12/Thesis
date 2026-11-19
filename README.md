@@ -9,9 +9,9 @@
 Undergraduate thesis, BSc Analytics and Sustainability Studies, Tata Institute of Social Sciences, Mumbai (2026)<br>
 Author: Sahil · Supervisor: Dr. Kamal Kumar Murari
 
-<a href="https://sahiljangra12.github.io/Thesis/"><img src="docs/cover.jpg" alt="Planetary Pressure Index vs life expectancy, 2011–2023" width="100%"></a>
+<a href="https://sahiljangra12.github.io/Thesis/"><img src="docs/assets/img/site-preview.jpg" alt="Study site: Earth from orbit with the title Development. At what planetary cost?" width="100%"></a>
 
-**[Open the interactive study site →](https://sahiljangra12.github.io/Thesis/)** · [Original chart](https://sahiljangra12.github.io/Thesis/ppi-chart.html) · [Method changes in v2.0](docs/method-changes.md) · [Results tables](results/)
+**[Open the interactive study site →](https://sahiljangra12.github.io/Thesis/)** An illustrated essay on the results: satellite plates for the six pressures, a beeswarm of the index by period, pressure fingerprints for every country, an alluvial of profile moves, and a world map. · [Full explorer](https://sahiljangra12.github.io/Thesis/explorer.html) · [Original chart](https://sahiljangra12.github.io/Thesis/ppi-chart.html) · [Method changes in v2.0](docs/method-changes.md) · [Results tables](results/)
 
 ## Research question
 
