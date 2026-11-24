@@ -623,6 +623,21 @@ html[data-theme] .button span[aria-hidden], html[data-theme] .cine-link span{mar
 .site-foot .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
 img{max-width:100%;height:auto}
 
+
+/* Phones: larger dashboard controls and readable labels */
+@media (max-width: 680px){
+#thesis .analytics-filters > .research-controls{grid-template-columns: repeat(2, minmax(0px, 1fr)); gap: 10px;}
+#thesis .research-controls label{font-size: 12.5px; gap: 5px;}
+#thesis .research-controls select{font-size: 15px; padding: 8px 10px; min-height: 44px; height: 44px;}
+#thesis .thesis-toolbar .button{min-width: 44px !important; min-height: 44px !important; height: auto !important;}
+#thesis .period-summary, #thesis .research-readout{font-size: 13px;}
+#thesis .thesis-stat-strip span{font-size: 12px;}
+#thesis .research-legend, #thesis #research-trend-legend{font-size: 12px;}
+#thesis .analytics-details summary, #thesis .analytics-more summary{font-size: 13px; min-height: 44px; padding: 11px 0px;}
+#thesis .detail > .lede{font-size: 13px !important;}
+#thesis .page-bar a{font-size: 13px;}
+.dash-fs{font-size: 12px; min-height: 40px;}
+}
 </style>
 </head>
 <body class="study-open">

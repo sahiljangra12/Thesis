@@ -446,3 +446,11 @@ code{font:13px ui-monospace,SFMono-Regular,Menlo,monospace;background:#ffffff12;
   .search input,.search select{min-height:44px;font-size:16px}
   .guide button.gh{min-height:44px}
 }
+
+/* Phones: readable small labels and finger-sized chips */
+@media (max-width:600px){
+  .nav .brand,.brand{min-height:44px}
+  .chip{min-height:44px;font-size:12.5px}
+  .seg button{min-height:44px;font-size:12px}
+  span.k,.viz-title .fig,.verdict,.takeaway span,.guide button.gh,figcaption,.pf-strip em,.pf-t span,.pf-thr span,.pf-thr em{font-size:12px}
+}

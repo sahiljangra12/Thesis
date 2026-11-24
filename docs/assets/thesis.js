@@ -17,7 +17,7 @@ window.GLOSSARY = {
 };
 (async function () {
   if (typeof THESIS === 'undefined') return;
-  const V = '20261119f';
+  const V = '20261124a';
   const [X, AN] = await Promise.all([
     fetch(`data/thesis-extra.json?v=${V}`).then(r => r.json()),
     fetch(`data/thesis_annual.json?v=${V}`).then(r => r.json())
